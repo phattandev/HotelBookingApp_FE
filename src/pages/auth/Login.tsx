@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const Login: React.FC = () => {
-  const { login } = useAuth();
+  const { login, registerUser, registerBusiness } = useAuth();
   const navigate = useNavigate();
   
   // Trạng thái trượt: 0 = Đăng nhập, 1 = Đăng ký, 2 = Doanh nghiệp
@@ -56,24 +56,66 @@ const Login: React.FC = () => {
   };
 
   const handleRegisterUserSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (regUserPassword !== regUserConfirm) {
-      return setError('Mật khẩu xác nhận không khớp.');
+  e.preventDefault();
+  setError('');
+  if (regUserPassword !== regUserConfirm) {
+    return setError('Mật khẩu xác nhận không khớp.');
+  }
+  
+  setIsSubmitting(true);
+  try {
+    // Map chính xác tên biến với Backend DTO (RegisterUserCommand)
+    await registerUser({
+      email: regUserEmail,
+      password: regUserPassword,
+      confirmPassword: regUserConfirm
+    });
+  } catch (err: any) {
+    const responseData = err.response?.data;
+    const validationErrors = responseData?.Errors || responseData?.errors;
+    if (validationErrors && validationErrors.length > 0) {
+      setError(validationErrors.join('\n'));
+    } else {
+      setError(responseData?.Message || responseData?.message || 'Đăng ký thất bại.');
     }
-    // Gọi API Đăng ký User ở đây
-    console.log('Register User:', { regUserEmail, regUserPassword });
-    alert("Chức năng đăng ký User đang được phát triển!");
-  };
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleRegisterBizSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (bizPassword !== bizConfirm) {
-      return setError('Mật khẩu xác nhận không khớp.');
+  e.preventDefault();
+  setError('');
+  if (bizPassword !== bizConfirm) {
+    return setError('Mật khẩu xác nhận không khớp.');
+  }
+
+  setIsSubmitting(true);
+  try {
+    // Map chính xác tên biến với Backend DTO (RegisterBusinessCommand)
+    await registerBusiness({
+      businessName: bizName,
+      taxCode: bizTaxCode,
+      businessAddress: bizAddress,
+      representativeName: repName,
+      position: repPosition,
+      representativePhone: repPhone,
+      representativeEmail: repEmail,
+      password: bizPassword,
+      confirmPassword: bizConfirm
+    });
+  } catch (err: any) {
+    const responseData = err.response?.data;
+    const validationErrors = responseData?.Errors || responseData?.errors;
+    if (validationErrors && validationErrors.length > 0) {
+      setError(validationErrors.join('\n'));
+    } else {
+      setError(responseData?.Message || responseData?.message || 'Đăng ký doanh nghiệp thất bại.');
     }
-    // Gọi API Đăng ký Doanh nghiệp ở đây
-    console.log('Register Business:', { bizName, bizTaxCode, bizAddress, repName, repPosition, repPhone, repEmail });
-    alert("Chức năng đăng ký Doanh nghiệp đang được phát triển!");
-  };
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div 

@@ -15,6 +15,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: any) => Promise<void>;
+  registerUser: (data: any) => Promise<void>;       // BỔ SUNG
+  registerBusiness: (data: any) => Promise<void>;   // BỔ SUNG
   logout: () => void;
 }
 
@@ -59,8 +61,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initAuth();
   }, []);
 
-  const login = async (credentials: any) => {
-    const response = await api.post('/auth/login', credentials);
+  // Hàm xử lý chung sau khi có kết quả trả về từ API Auth (Login/Register)
+  const handleAuthResponse = (response: any) => {
     const { accessToken, refreshToken } = response.data.data;
     
     setTokens(accessToken, refreshToken);
@@ -76,6 +78,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate('/');
   };
 
+  const login = async (credentials: any) => {
+    const response = await api.post('/auth/login', credentials);
+    handleAuthResponse(response);
+  };
+
+  // --- BỔ SUNG: Hàm Đăng ký Khách hàng ---
+  const registerUser = async (data: any) => {
+    const response = await api.post('/auth/register/user', data);
+    handleAuthResponse(response);
+  };
+
+  // --- BỔ SUNG: Hàm Đăng ký Doanh nghiệp ---
+  const registerBusiness = async (data: any) => {
+    const response = await api.post('/auth/register/business', data);
+    handleAuthResponse(response);
+  };
+
   const logout = () => {
     clearTokens();
     setUser(null);
@@ -83,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, registerUser, registerBusiness, logout }}>
       {!isLoading && children}
     </AuthContext.Provider>
   );
