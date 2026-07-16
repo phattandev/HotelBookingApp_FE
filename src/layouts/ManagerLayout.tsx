@@ -3,15 +3,15 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
-  { to: '/admin', label: 'Tổng quan', exact: true },
-  { to: '/admin/provinces', label: 'Quản lý Địa điểm' },
-  { to: '/admin/amenities', label: 'Quản lý Tiện nghi' },
-  { to: '/admin/hotels', label: 'Quản lý Khách sạn' },
-  { to: '/admin/accounts', label: 'Quản lý Tài khoản' },
-  { to: '/admin/profile', label: 'Quản lý hồ sơ cá nhân' },
+  { to: '/manager', label: 'Tổng quan', exact: true },
+  { to: '/manager/hotel', label: 'Quản lý thông tin KS' },
+  { to: '/manager/roomtypes', label: 'Quản lý loại phòng' },
+  { to: '/manager/bookings', label: 'Quản lý đặt phòng' },
+  { to: '/manager/policy', label: 'Quản lý chính sách' },
+  { to: '/manager/profile', label: 'Quản lý hồ sơ cá nhân' },
 ];
 
-const AdminLayout: React.FC = () => {
+const ManagerLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
 
@@ -21,16 +21,16 @@ const AdminLayout: React.FC = () => {
       <aside className="w-60 bg-slate-900 flex flex-col shrink-0">
         {/* Brand */}
         <div className="px-5 py-6 border-b border-slate-800">
-          <Link to="/admin" className="block">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Hệ thống</span>
-            <div className="text-white font-bold text-lg mt-0.5 leading-tight">Quản trị viên</div>
+          <Link to="/manager" className="block">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Quản lý</span>
+            <div className="text-white font-bold text-lg mt-0.5 leading-tight">Khách sạn</div>
           </Link>
         </div>
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5">
           {navItems.map((item) => {
-            const active = (item as any).exact
+            const active = item.exact
               ? location.pathname === item.to
               : location.pathname.startsWith(item.to);
             return (
@@ -38,7 +38,7 @@ const AdminLayout: React.FC = () => {
                 key={item.to}
                 to={item.to}
                 className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active
-                  ? 'bg-violet-600/20 text-violet-300 border-l-2 border-violet-500 pl-[10px]'
+                  ? 'bg-emerald-600/20 text-emerald-300 border-l-2 border-emerald-500 pl-[10px]'
                   : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
                   }`}
               >
@@ -58,12 +58,12 @@ const AdminLayout: React.FC = () => {
 
         {/* User footer */}
         <div className="px-4 py-4 border-t border-slate-800 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-violet-600/30 text-violet-300 flex items-center justify-center text-sm font-bold uppercase shrink-0">
-            {user?.Username?.charAt(0) ?? 'A'}
+          <div className="w-8 h-8 rounded-full bg-emerald-600/30 text-emerald-300 flex items-center justify-center text-sm font-bold uppercase shrink-0">
+            {user?.Username?.charAt(0) ?? 'M'}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-slate-200 text-sm font-medium truncate">{user?.Username}</p>
-            <p className="text-slate-500 text-xs">Admin</p>
+            <p className="text-slate-500 text-xs">Manager</p>
           </div>
           <button
             onClick={logout}
@@ -82,11 +82,11 @@ const AdminLayout: React.FC = () => {
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <span className="text-slate-300">/</span>
             <span className="font-medium text-slate-700">
-              {navItems.find(n => location.pathname.startsWith(n.to))?.label ?? 'Admin Panel'}
+              {navItems.find(n => location.pathname.startsWith(n.to))?.label ?? 'Manager Panel'}
             </span>
           </div>
-          <span className="text-[11px] bg-violet-100 text-violet-700 font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide">
-            Admin
+          <span className="text-[11px] bg-emerald-100 text-emerald-700 font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide">
+            Manager
           </span>
         </header>
 
@@ -98,4 +98,4 @@ const AdminLayout: React.FC = () => {
   );
 };
 
-export default AdminLayout;
+export default ManagerLayout;

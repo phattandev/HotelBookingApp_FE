@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const Login: React.FC = () => {
   const { login, registerUser, registerBusiness } = useAuth();
-  const navigate = useNavigate();
-  
+
   // Trạng thái trượt: 0 = Đăng nhập, 1 = Đăng ký, 2 = Doanh nghiệp
   const [activeTab, setActiveTab] = useState<0 | 1 | 2>(0);
-  
+
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -56,69 +55,72 @@ const Login: React.FC = () => {
   };
 
   const handleRegisterUserSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError('');
-  if (regUserPassword !== regUserConfirm) {
-    return setError('Mật khẩu xác nhận không khớp.');
-  }
-  
-  setIsSubmitting(true);
-  try {
-    // Map chính xác tên biến với Backend DTO (RegisterUserCommand)
-    await registerUser({
-      email: regUserEmail,
-      password: regUserPassword,
-      confirmPassword: regUserConfirm
-    });
-  } catch (err: any) {
-    const responseData = err.response?.data;
-    const validationErrors = responseData?.Errors || responseData?.errors;
-    if (validationErrors && validationErrors.length > 0) {
-      setError(validationErrors.join('\n'));
-    } else {
-      setError(responseData?.Message || responseData?.message || 'Đăng ký thất bại.');
+    e.preventDefault();
+    setError('');
+    if (regUserPassword !== regUserConfirm) {
+      return setError('Mật khẩu xác nhận không khớp.');
     }
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+
+    setIsSubmitting(true);
+    try {
+      // Map chính xác tên biến với Backend DTO (RegisterUserCommand)
+      await registerUser({
+        email: regUserEmail,
+        password: regUserPassword,
+        confirmPassword: regUserConfirm
+      });
+      toast.success('Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.');
+    } catch (err: any) {
+      const responseData = err.response?.data;
+      const validationErrors = responseData?.Errors || responseData?.errors;
+      if (validationErrors && validationErrors.length > 0) {
+        setError(validationErrors.join('\n'));
+      } else {
+        setError(responseData?.Message || responseData?.message || 'Đăng ký thất bại.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleRegisterBizSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError('');
-  if (bizPassword !== bizConfirm) {
-    return setError('Mật khẩu xác nhận không khớp.');
-  }
-
-  setIsSubmitting(true);
-  try {
-    // Map chính xác tên biến với Backend DTO (RegisterBusinessCommand)
-    await registerBusiness({
-      businessName: bizName,
-      taxCode: bizTaxCode,
-      businessAddress: bizAddress,
-      representativeName: repName,
-      position: repPosition,
-      representativePhone: repPhone,
-      representativeEmail: repEmail,
-      password: bizPassword,
-      confirmPassword: bizConfirm
-    });
-  } catch (err: any) {
-    const responseData = err.response?.data;
-    const validationErrors = responseData?.Errors || responseData?.errors;
-    if (validationErrors && validationErrors.length > 0) {
-      setError(validationErrors.join('\n'));
-    } else {
-      setError(responseData?.Message || responseData?.message || 'Đăng ký doanh nghiệp thất bại.');
+    e.preventDefault();
+    setError('');
+    if (bizPassword !== bizConfirm) {
+      return setError('Mật khẩu xác nhận không khớp.');
     }
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+
+    setIsSubmitting(true);
+    try {
+      // Map chính xác tên biến với Backend DTO (RegisterBusinessCommand)
+      await registerBusiness({
+        businessName: bizName,
+        taxCode: bizTaxCode,
+        businessAddress: bizAddress,
+        representativeName: repName,
+        position: repPosition,
+        representativePhone: repPhone,
+        representativeEmail: repEmail,
+        password: bizPassword,
+        confirmPassword: bizConfirm
+      });
+      toast.success('Đăng ký doanh nghiệp thành công! Vui lòng chờ Admin phê duyệt tài khoản.');
+      setActiveTab(0); // Chuyển về tab Đăng nhập
+    } catch (err: any) {
+      const responseData = err.response?.data;
+      const validationErrors = responseData?.Errors || responseData?.errors;
+      if (validationErrors && validationErrors.length > 0) {
+        setError(validationErrors.join('\n'));
+      } else {
+        setError(responseData?.Message || responseData?.message || 'Đăng ký doanh nghiệp thất bại.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <div 
+    <div
       className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat relative p-4"
       style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80")' }}
     >
@@ -127,36 +129,36 @@ const Login: React.FC = () => {
 
       {/* Box Glassmorphism */}
       <div className="relative w-full max-w-2xl bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl overflow-hidden text-white">
-        
+
         {/* Header & Menu trượt */}
         <div className="p-6 pb-0">
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold tracking-tight">HotelBookingApp</h1>
-            <p className="text-white/80 mt-2">Bắt đầu hành trình của bạn cùng chúng tôi</p>
+            <h1 className="text-3xl font-bold tracking-tight">HotelBooking</h1>
+            <p className="text-white/80 mt-2">Nơi nghỉ chân hoàn hảo cho chuyến hành trình dài của bạn</p>
           </div>
 
           <div className="flex justify-between border-b border-white/20 relative">
-            <button 
+            <button
               onClick={() => setActiveTab(0)}
               className={`pb-3 w-1/3 text-center font-medium transition-colors ${activeTab === 0 ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
             >
               Đăng nhập
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab(1)}
               className={`pb-3 w-1/3 text-center font-medium transition-colors ${activeTab === 1 ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
             >
-              Đăng ký
+              Đăng ký người dùng
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab(2)}
               className={`pb-3 w-1/3 text-center font-medium transition-colors ${activeTab === 2 ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
             >
-              Doanh nghiệp
+              Đăng ký doanh nghiệp
             </button>
-            
+
             {/* Thanh gạch chân trượt */}
-            <div 
+            <div
               className="absolute bottom-0 h-0.5 bg-white transition-all duration-300 ease-in-out w-1/3"
               style={{ transform: `translateX(${activeTab * 100}%)` }}
             ></div>
@@ -172,24 +174,24 @@ const Login: React.FC = () => {
 
         {/* Khung chứa các Form với hiệu ứng trượt */}
         <div className="overflow-hidden relative w-full h-[550px] sm:h-[450px]">
-          <div 
+          <div
             className="flex transition-transform duration-500 ease-in-out w-[300%] h-full"
-            style={{ transform: `translateX(-${activeTab * (100/3)}%)` }}
+            style={{ transform: `translateX(-${activeTab * (100 / 3)}%)` }}
           >
-            
+
             {/* --- PANEL 1: ĐĂNG NHẬP --- */}
             <div className="w-1/3 p-6 h-full overflow-y-auto custom-scrollbar">
               <form onSubmit={handleLoginSubmit} className="space-y-4 max-w-sm mx-auto mt-4">
                 <div>
                   <label className="block text-sm font-medium text-white/90 mb-1">Email hoặc Tài khoản</label>
                   <input type="text" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none placeholder-white/30 text-white" 
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none placeholder-white/30 text-white"
                     placeholder="Nhập email..." />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-white/90 mb-1">Mật khẩu</label>
                   <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none placeholder-white/30 text-white" 
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none placeholder-white/30 text-white"
                     placeholder="••••••••" />
                 </div>
                 <div className="flex items-center justify-between text-sm mt-4">
@@ -236,7 +238,7 @@ const Login: React.FC = () => {
             {/* --- PANEL 3: ĐĂNG KÝ DOANH NGHIỆP --- */}
             <div className="w-1/3 p-6 h-full overflow-y-auto custom-scrollbar">
               <form onSubmit={handleRegisterBizSubmit} className="space-y-5 mt-2">
-                
+
                 <h3 className="font-semibold text-white/90 border-b border-white/20 pb-2">1. Thông tin pháp lý & Doanh nghiệp</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>

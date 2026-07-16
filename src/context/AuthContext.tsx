@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { setTokens, clearTokens, getTokens } from '../utils/token';
+import type { LoginRequest, RegisterUserRequest, RegisterBusinessRequest, ApiResponse, AuthResponse } from '../types/auth.types';
 
 export interface User {
   Id: string;
@@ -14,9 +15,9 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: any) => Promise<void>;
-  registerUser: (data: any) => Promise<void>;       // BỔ SUNG
-  registerBusiness: (data: any) => Promise<void>;   // BỔ SUNG
+  login: (credentials: LoginRequest) => Promise<void>;
+  registerUser: (data: RegisterUserRequest) => Promise<void>;
+  registerBusiness: (data: RegisterBusinessRequest) => Promise<void>;
   logout: () => void;
 }
 
@@ -62,37 +63,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Hàm xử lý chung sau khi có kết quả trả về từ API Auth (Login/Register)
-  const handleAuthResponse = (response: any) => {
-    const { accessToken, refreshToken } = response.data.data;
+  const handleAuthResponse = (response: ApiResponse<AuthResponse>) => {
+    const { accessToken, refreshToken } = response.data;
     
     setTokens(accessToken, refreshToken);
     
     const decoded = parseJwt(accessToken);
+    const userRole = decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decoded.role || 'customer';
+
     setUser({
       Id: decoded.nameid || decoded.sub || '',
       Username: decoded.unique_name || decoded.name || '',
       Email: decoded.email || '',
-      Role: decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decoded.role || 'USER',
+      Role: userRole,
     });
     
-    navigate('/');
+    // 🟢 ĐIỀU HƯỚNG THEO ROLE (PHÂN QUYỀN GIAO DIỆN)
+    if (userRole === 'admin') {
+      navigate('/admin'); // Chuyển thẳng vào Admin Dashboard
+    } else if (userRole === 'partner') {
+      navigate('/partner'); // Chuyển thẳng vào Partner Console
+    } else if (userRole === 'manager') {
+      navigate('/manager'); // Chuyển vào trang Quản lý Khách sạn
+    } else {
+      navigate('/'); // Khách hàng bình thường về trang chủ
+    }
   };
 
-  const login = async (credentials: any) => {
-    const response = await api.post('/auth/login', credentials);
-    handleAuthResponse(response);
+  const login = async (credentials: LoginRequest) => {
+    const response = await api.post<ApiResponse<AuthResponse>>('/auth/login', credentials);
+    handleAuthResponse(response.data);
   };
 
-  // --- BỔ SUNG: Hàm Đăng ký Khách hàng ---
-  const registerUser = async (data: any) => {
-    const response = await api.post('/auth/register/user', data);
-    handleAuthResponse(response);
+  // Hàm Đăng ký Khách hàng
+  const registerUser = async (data: RegisterUserRequest) => {
+    const response = await api.post<ApiResponse<AuthResponse>>('/auth/register/user', data);
+    handleAuthResponse(response.data);
   };
 
-  // --- BỔ SUNG: Hàm Đăng ký Doanh nghiệp ---
-  const registerBusiness = async (data: any) => {
-    const response = await api.post('/auth/register/business', data);
-    handleAuthResponse(response);
+  // Hàm Đăng ký Doanh nghiệp
+  const registerBusiness = async (data: RegisterBusinessRequest) => {
+    await api.post<ApiResponse<string>>('/auth/register/business', data);
+    // Không gọi handleAuthResponse nữa vì API chỉ trả về chuỗi thành công, tài khoản cần chờ duyệt.
   };
 
   const logout = () => {
