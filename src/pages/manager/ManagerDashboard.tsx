@@ -1,26 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import api from '../../services/api';
+import React from 'react';
+import { useManagerDashboard } from '../../hooks/useManagerDashboard';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { Badge } from '../../components/ui/Badge';
+import { Table } from '../../components/ui/Table';
 import {
-  CalendarDaysIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  UserGroupIcon,
-  HomeModernIcon,
-  ChevronRightIcon,
-} from '@heroicons/react/24/outline';
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
 
-interface Booking {
-  id: string;
-  guestName: string;
-  checkInDate: string;
-  checkOutDate: string;
-  status: string;
-  numRooms: number;
-  totalPrice: number;
-}
-
-const formatDate = (d: string) =>
-  new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#6366f1', '#ef4444'];
 
 const statusMap: Record<string, { label: string; color: string }> = {
   Pending:   { label: 'Chờ xác nhận', color: 'bg-amber-100 text-amber-700' },
@@ -29,62 +26,96 @@ const statusMap: Record<string, { label: string; color: string }> = {
   Cancelled: { label: 'Đã hủy',       color: 'bg-red-100 text-red-700' },
 };
 
+const formatDate = (d: string) =>
+  new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+const StatCard: React.FC<{
+  title: string;
+  value: string | number;
+  subtitle?: string;
+}> = ({ title, value, subtitle }) => (
+  <div className="bg-white rounded-lg border border-slate-200 p-5">
+    <div>
+      <p className="text-sm font-semibold text-slate-600">{title}</p>
+      <p className="text-2xl font-bold mt-2 text-slate-900">{value}</p>
+      {subtitle && <p className="text-xs text-slate-500 mt-2 border-t border-slate-100 pt-2">{subtitle}</p>}
+    </div>
+  </div>
+);
+
 const ManagerDashboard: React.FC = () => {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { stats, recentBookings, loading, dateRange, handleDateChange } = useManagerDashboard();
 
-  useEffect(() => {
-    api.get('/manager/bookings')
-      .then(res => setBookings(res.data.data || []))
-      .catch(() => setBookings([]))
-      .finally(() => setLoading(false));
-  }, []);
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
-  const today = new Date().toISOString().split('T')[0];
-  const pendingCount   = bookings.filter(b => b.status === 'Pending').length;
-  const confirmedCount = bookings.filter(b => b.status === 'Confirmed').length;
-  const checkInsToday  = bookings.filter(b => b.checkInDate.startsWith(today) && b.status === 'Confirmed').length;
-  const totalRevenue   = bookings
-    .filter(b => b.status === 'Completed')
-    .reduce((sum, b) => sum + b.totalPrice, 0);
+  if (!stats) return (
+    <div className="p-8 text-center text-slate-400">Không thể tải dữ liệu thống kê.</div>
+  );
+
+  const pieData = Object.entries(stats.bookingStatusBreakdown).map(([key, val]) => ({
+    name: key,
+    value: val
+  }));
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Tổng quan khách sạn</h1>
-        <p className="text-slate-500 mt-1 text-sm">Theo dõi lịch đặt phòng và hoạt động hàng ngày</p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-5">
-        {[
-          { label: 'Chờ xác nhận', value: pendingCount, icon: <ClockIcon className="w-5 h-5 text-amber-600" />, bg: 'bg-amber-50', color: pendingCount > 0 ? 'text-amber-600' : 'text-slate-900' },
-          { label: 'Check-in hôm nay', value: checkInsToday, icon: <HomeModernIcon className="w-5 h-5 text-blue-600" />, bg: 'bg-blue-50', color: 'text-blue-600' },
-          { label: 'Đang lưu trú', value: confirmedCount, icon: <UserGroupIcon className="w-5 h-5 text-emerald-600" />, bg: 'bg-emerald-50', color: 'text-emerald-600' },
-          { label: 'Doanh thu (hoàn tất)', value: null, revenue: totalRevenue, icon: <CheckCircleIcon className="w-5 h-5 text-violet-600" />, bg: 'bg-violet-50', color: 'text-violet-600' },
-        ].map((s, i) => (
-          <div key={i} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-            <div className="flex items-center gap-3 mb-3">
-              <div className={`p-2 rounded-lg ${s.bg}`}>{s.icon}</div>
-              <p className="text-xs font-medium text-slate-500">{s.label}</p>
-            </div>
-            {s.revenue !== undefined
-              ? <p className={`text-xl font-bold ${s.color}`}>{s.revenue.toLocaleString('vi-VN')}đ</p>
-              : <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            }
+      {/* Header & Filter */}
+      <PageHeader
+        title="Tổng quan khách sạn"
+        description="Theo dõi hoạt động kinh doanh hàng ngày"
+        action={
+          <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+            <input 
+              type="date" 
+              value={dateRange.fromDate}
+              onChange={(e) => handleDateChange(e.target.value, dateRange.toDate)}
+              className="text-sm border-none focus:ring-0 text-slate-700 bg-transparent"
+            />
+            <span className="text-slate-400">-</span>
+            <input 
+              type="date" 
+              value={dateRange.toDate}
+              onChange={(e) => handleDateChange(dateRange.fromDate, e.target.value)}
+              className="text-sm border-none focus:ring-0 text-slate-700 bg-transparent"
+            />
           </div>
-        ))}
+        }
+      />
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <StatCard
+          title="Doanh thu"
+          value={stats.totalRevenue.toLocaleString('vi-VN') + ' VNĐ'}
+          subtitle={`Tiền cọc: ${stats.totalDepositCollected.toLocaleString('vi-VN')} VNĐ`}
+        />
+        <StatCard
+          title="Công suất phòng"
+          value={(stats.occupancyToday * 100).toFixed(1) + '%'}
+          subtitle={`Tổng số phòng: ${stats.totalRooms}`}
+        />
+        <StatCard
+          title="Giao dịch hôm nay"
+          value={`${stats.checkInsToday} nhận / ${stats.checkOutsToday} trả`}
+          subtitle="Số phòng nhận/trả trong ngày"
+        />
+        <StatCard
+          title="Đơn chờ duyệt"
+          value={stats.pendingBookings}
+          subtitle="Cần xác nhận sớm"
+        />
       </div>
 
-      {/* Pending bookings alert */}
-      {pendingCount > 0 && (
+      {/* Alert nếu có đơn chờ duyệt */}
+      {stats.pendingBookings > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <ClockIcon className="w-5 h-5 text-amber-600" />
-            <span className="font-bold text-amber-800">
-              Có <span className="underline">{pendingCount} đơn đặt phòng</span> đang chờ bạn xác nhận
-            </span>
+          <div>
+            <h3 className="font-bold text-amber-800">Có {stats.pendingBookings} đơn đặt phòng đang chờ bạn xác nhận</h3>
+            <p className="text-amber-700 text-sm mt-1">Hãy kiểm tra và xác nhận sớm để không làm lỡ chuyến đi của khách hàng.</p>
           </div>
           <a href="/manager/bookings" className="px-4 py-2 bg-amber-600 text-white text-sm font-bold rounded-xl hover:bg-amber-700 transition">
             Xem ngay
@@ -92,56 +123,113 @@ const ManagerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Recent bookings */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="font-bold text-slate-900 flex items-center gap-2">
-            <CalendarDaysIcon className="w-5 h-5 text-slate-500" />
-            Đặt phòng gần đây
-          </h3>
-          <a href="/manager/bookings" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1">
-            Xem tất cả <ChevronRightIcon className="w-4 h-4" />
-          </a>
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
+        
+        {/* Doanh thu 6 tháng */}
+        <div className="xl:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          <h3 className="font-bold text-slate-900 mb-6">Doanh thu 6 tháng qua</h3>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.revenueTrend}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="month" tick={{fontSize: 12}} tickLine={false} axisLine={false} />
+                <YAxis 
+                  tickFormatter={(val) => `${val / 1000000}M`} 
+                  tick={{fontSize: 12}} tickLine={false} axisLine={false} 
+                />
+                <Tooltip 
+                  formatter={(val: any) => [`${val.toLocaleString('vi-VN')}đ`, 'Doanh thu']}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {loading ? (
-          <div className="p-8 text-center text-slate-400 text-sm">Đang tải...</div>
-        ) : bookings.length === 0 ? (
-          <div className="p-12 text-center">
-            <CalendarDaysIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500">Chưa có đặt phòng nào</p>
+        {/* Trạng thái đơn */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          <h3 className="font-bold text-slate-900 mb-6">Trạng thái đặt phòng</h3>
+          <div className="h-72">
+            {pieData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {pieData.map((_entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px' }}/>
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Chưa có dữ liệu</div>
+            )}
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 text-left">
-                  <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Khách hàng</th>
-                  <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Check-in</th>
-                  <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Check-out</th>
-                  <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Phòng</th>
-                  <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {bookings.slice(0, 8).map(b => {
-                  const s = statusMap[b.status] || { label: b.status, color: 'bg-slate-100 text-slate-600' };
-                  return (
-                    <tr key={b.id} className="hover:bg-slate-50 transition">
-                      <td className="px-6 py-4 font-medium text-slate-900">{b.guestName}</td>
-                      <td className="px-6 py-4 text-slate-600">{formatDate(b.checkInDate)}</td>
-                      <td className="px-6 py-4 text-slate-600">{formatDate(b.checkOutDate)}</td>
-                      <td className="px-6 py-4 text-slate-600">{b.numRooms} phòng</td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${s.color}`}>{s.label}</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        </div>
+
+      </div>
+
+      {/* Recent Bookings Table */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+          <h3 className="font-bold text-slate-900">Đặt phòng gần đây</h3>
+        </div>
+        <Table
+          columns={[
+            {
+              key: 'customer',
+              header: 'Khách hàng',
+              render: (b) => <span className="font-medium text-slate-900">{b.guestName}</span>
+            },
+            {
+              key: 'checkIn',
+              header: 'Check-in',
+              render: (b) => <span className="text-slate-600">{formatDate(b.checkInDate)}</span>
+            },
+            {
+              key: 'checkOut',
+              header: 'Check-out',
+              render: (b) => <span className="text-slate-600">{formatDate(b.checkOutDate)}</span>
+            },
+            {
+              key: 'rooms',
+              header: 'Phòng',
+              render: (b) => <span className="text-slate-600">{b.numRooms} phòng</span>
+            },
+            {
+              key: 'total',
+              header: 'Tổng tiền',
+              render: (b) => <span className="font-bold text-emerald-600">{b.totalPrice.toLocaleString('vi-VN')}đ</span>
+            },
+            {
+              key: 'status',
+              header: 'Trạng thái',
+              render: (b) => {
+                const s = statusMap[b.status] || { label: b.status, color: 'neutral' };
+                let v: 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'violet' = 'neutral';
+                if (b.status === 'Pending') v = 'warning';
+                else if (b.status === 'Confirmed') v = 'info';
+                else if (b.status === 'Completed') v = 'success';
+                else if (b.status === 'Cancelled') v = 'danger';
+                return <Badge variant={v}>{s.label}</Badge>;
+              }
+            }
+          ]}
+          data={recentBookings.slice(0, 10)}
+          keyExtractor={(b) => b.id}
+          emptyMessage="Chưa có đặt phòng nào"
+        />
       </div>
     </div>
   );

@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
 const CustomerProfile: React.FC = () => {
   const { user } = useAuth();
@@ -57,20 +60,20 @@ const CustomerProfile: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Hồ sơ cá nhân</h1>
-        <p className="text-sm text-slate-500 mt-1">Quản lý thông tin tài khoản của bạn</p>
-      </div>
+      <PageHeader
+        title="Hồ sơ cá nhân"
+        description="Quản lý thông tin tài khoản của bạn"
+      />
 
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex flex-col md:flex-row">
         
         {/* Cột trái: Tóm tắt */}
         <div className="md:w-1/3 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200 p-8 flex flex-col items-center text-center">
-          <div className="w-24 h-24 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-3xl font-bold uppercase mb-4">
+          <div className="w-24 h-24 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-3xl font-bold uppercase mb-4">
             {user?.Username.charAt(0)}
           </div>
           <h2 className="text-lg font-bold text-slate-900">{form.fullName || user?.Username}</h2>
-          <span className="inline-block mt-2 px-3 py-1 bg-indigo-600/10 text-indigo-700 text-xs font-bold rounded-full uppercase tracking-wider">
+          <span className="inline-block mt-2 px-3 py-1 bg-violet-600/10 text-violet-700 text-xs font-bold rounded-full uppercase tracking-wider">
             {user?.Role || 'Khách hàng'}
           </span>
           <p className="mt-4 text-sm text-slate-500 break-all">{user?.Email}</p>
@@ -82,21 +85,17 @@ const CustomerProfile: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Họ và tên</label>
-                <input type="text" required value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <Input label="Họ và tên" type="text" required value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})} />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Số điện thoại</label>
-                <input type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <Input label="Số điện thoại" type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Giới tính</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Giới tính</label>
                 <select value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
                   <option value="Nam">Nam</option>
                   <option value="Nữ">Nữ</option>
                   <option value="Khác">Khác</option>
@@ -104,18 +103,15 @@ const CustomerProfile: React.FC = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ngày sinh</label>
-                <input type="date" value={form.dateOfBirth} onChange={e => setForm({...form, dateOfBirth: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <Input label="Ngày sinh" type="date" value={form.dateOfBirth} onChange={e => setForm({...form, dateOfBirth: e.target.value})} />
               </div>
 
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex justify-end">
-              <button type="submit" disabled={saving}
-                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white rounded-xl text-sm font-bold transition shadow-sm shadow-indigo-600/20">
+              <Button type="submit" disabled={saving} variant="primary">
                 {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
-              </button>
+              </Button>
             </div>
           </form>
         </div>

@@ -3,8 +3,8 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
-  { to: '/manager', label: 'Tổng quan', exact: true },
-  { to: '/manager/hotel', label: 'Quản lý thông tin KS' },
+  { to: '/manager', label: 'Thống kê tổng quát', exact: true },
+  { to: '/manager/hotel', label: 'Quản lý khách sạn' },
   { to: '/manager/roomtypes', label: 'Quản lý loại phòng' },
   { to: '/manager/bookings', label: 'Quản lý đặt phòng' },
   { to: '/manager/policy', label: 'Quản lý chính sách' },
@@ -38,7 +38,7 @@ const ManagerLayout: React.FC = () => {
                 key={item.to}
                 to={item.to}
                 className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active
-                  ? 'bg-emerald-600/20 text-emerald-300 border-l-2 border-emerald-500 pl-[10px]'
+                  ? 'bg-violet-600/20 text-violet-300 border-l-2 border-violet-500 pl-[10px]'
                   : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
                   }`}
               >
@@ -58,7 +58,7 @@ const ManagerLayout: React.FC = () => {
 
         {/* User footer */}
         <div className="px-4 py-4 border-t border-slate-800 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-emerald-600/30 text-emerald-300 flex items-center justify-center text-sm font-bold uppercase shrink-0">
+          <div className="w-8 h-8 rounded-full bg-violet-600/30 text-violet-300 flex items-center justify-center text-sm font-bold uppercase shrink-0">
             {user?.Username?.charAt(0) ?? 'M'}
           </div>
           <div className="flex-1 min-w-0">
@@ -82,10 +82,10 @@ const ManagerLayout: React.FC = () => {
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <span className="text-slate-300">/</span>
             <span className="font-medium text-slate-700">
-              {navItems.find(n => location.pathname.startsWith(n.to))?.label ?? 'Manager Panel'}
+              {navItems.find(n => (n as any).exact ? location.pathname === n.to || location.pathname === n.to + '/' : location.pathname.startsWith(n.to))?.label ?? 'Manager Panel'}
             </span>
           </div>
-          <span className="text-[11px] bg-emerald-100 text-emerald-700 font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide">
+          <span className="text-[11px] bg-violet-100 text-violet-700 font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide">
             Manager
           </span>
         </header>

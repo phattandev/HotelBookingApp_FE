@@ -1,6 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import api from '../../services/api';
+import RoomTypeModal from '../../components/RoomTypeModal';
+import BookingModal from '../../components/BookingModal';
+import toast from 'react-hot-toast';
+import { DatePicker } from '../../components/ui/DatePicker';
+import OccupancyDropdown from '../../components/OccupancyDropdown';
+import { format, addDays } from 'date-fns';
+import { Button } from '../../components/ui/Button';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────────────────
 interface AmenityItem { id: string; name: string; categoryName: string; }
@@ -37,8 +44,7 @@ const SCORE_LABELS: Record<string, string> = {
 // ─── Main Component ──────────────────────────────────────────────────────────────────
 const HotelDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [hotel, setHotel] = useState<HotelDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,8 +55,85 @@ const HotelDetailPage: React.FC = () => {
   const [reviewPage, setReviewPage] = useState(1);
   const [hasMoreReviews, setHasMoreReviews] = useState(true);
 
-  const checkIn = searchParams.get('checkIn') || '';
-  const checkOut = searchParams.get('checkOut') || '';
+  const checkIn = searchParams.get('checkIn') || format(new Date(), 'yyyy-MM-dd');
+  const checkOut = searchParams.get('checkOut') || format(addDays(new Date(), 1), 'yyyy-MM-dd');
+  const adults = parseInt(searchParams.get('adults') || '2', 10);
+  const children = parseInt(searchParams.get('children') || '0', 10);
+  const rooms = parseInt(searchParams.get('rooms') || '1', 10);
+
+  const [localCheckIn, setLocalCheckIn] = useState(checkIn);
+  const [localCheckOut, setLocalCheckOut] = useState(checkOut);
+  const [localOccupancy, setLocalOccupancy] = useState({ rooms, adults, children });
+
+  useEffect(() => {
+    setLocalCheckIn(checkIn);
+    setLocalCheckOut(checkOut);
+    setLocalOccupancy({ rooms, adults, children });
+  }, [checkIn, checkOut, rooms, adults, children]);
+
+  const handleUpdateSearch = () => {
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    if (localCheckIn && localCheckIn < todayStr) {
+      toast.error('Ngày nhận phòng không thể là ngày trong quá khứ!');
+      return;
+    }
+    if (localCheckIn && localCheckOut && localCheckOut <= localCheckIn) {
+      toast.error('Ngày trả phòng phải sau ngày nhận phòng!');
+      return;
+    }
+    const p = new URLSearchParams(searchParams);
+    p.set('checkIn', localCheckIn);
+    p.set('checkOut', localCheckOut);
+    p.set('rooms', localOccupancy.rooms.toString());
+    p.set('adults', localOccupancy.adults.toString());
+    p.set('children', localOccupancy.children.toString());
+    setSearchParams(p);
+  };
+
+  const parseDateString = (dateStr: string) => {
+    if (!dateStr) return null;
+    const parts = dateStr.split('-');
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  };
+  const formatDateString = (d: Date | null) => d ? format(d, 'yyyy-MM-dd') : '';
+
+  const [selectedRooms, setSelectedRooms] = useState<Record<string, number>>({});
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [selectedRoomTypeForModal, setSelectedRoomTypeForModal] = useState<RoomType | null>(null);
+
+  const handleRoomCountChange = (roomId: string, change: number, maxAvailable: number) => {
+    setSelectedRooms(prev => {
+      const current = prev[roomId] || 0;
+      const next = current + change;
+      if (next < 0 || next > maxAvailable) return prev;
+      const updated = { ...prev };
+      if (next === 0) {
+        delete updated[roomId];
+      } else {
+        updated[roomId] = next;
+      }
+      return updated;
+    });
+  };
+
+  const checkInDate = checkIn ? new Date(checkIn) : null;
+  const checkOutDate = checkOut ? new Date(checkOut) : null;
+  const numNights = checkInDate && checkOutDate 
+    ? Math.max(1, Math.round((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)))
+    : 1;
+
+  const selectedRoomsArray = Object.entries(selectedRooms).map(([id, quantity]) => {
+    const rt = hotel?.roomTypes.find(r => r.id === id);
+    return {
+      roomTypeId: id,
+      name: rt?.name || '',
+      quantity,
+      basePrice: rt?.basePrice || 0
+    };
+  });
+
+  const totalRoomsSelected = selectedRoomsArray.reduce((sum, r) => sum + r.quantity, 0);
+  const totalPrice = selectedRoomsArray.reduce((sum, r) => sum + (r.quantity * r.basePrice * numNights), 0);
 
   // Lấy chi tiết khách sạn, truyền thêm checkIn/checkOut để tính phòng còn trống
   const fetchDetail = useCallback(async () => {
@@ -127,8 +210,10 @@ const HotelDetailPage: React.FC = () => {
       <div className="relative bg-slate-900" style={{ height: '420px' }}>
         {allImages.length > 0 ? (
           <>
-            <img src={allImages[activeImg]?.url || primaryImg?.url} alt={hotel.name}
-              className="w-full h-full object-cover opacity-90" />
+            <div 
+              className="w-full h-full bg-cover bg-center opacity-90 transition-all duration-500" 
+              style={{ backgroundImage: `url(${allImages[activeImg]?.url || primaryImg?.url})` }}
+            />
             {allImages.length > 1 && (
               <>
                 <button onClick={() => setActiveImg(i => Math.max(0, i - 1))}
@@ -209,13 +294,80 @@ const HotelDetailPage: React.FC = () => {
 
             {/* Danh sách loại phòng */}
             <div>
-              <h2 className="text-lg font-bold text-slate-800 mb-4">Các loại phòng</h2>
-              <div className="space-y-4">
-                {hotel.roomTypes.map(rt => {
-                  const rtImg = rt.images.find(i => i.isPrimary) || rt.images[0];
-                  const isFull = rt.availableRooms === 0;
-                  
-                  return (
+              <div className="bg-indigo-400 p-1 rounded-xl shadow-lg mb-8">
+                <div className="bg-white px-4 py-3 rounded-t-lg border-b border-indigo-100">
+                  <h3 className="text-sm font-bold text-slate-800">Kiểm tra phòng trống</h3>
+                </div>
+                <div className="flex flex-col lg:flex-row gap-1">
+                  {/* Nhận phòng */}
+                  <div className="w-full lg:flex-1 bg-white flex flex-col justify-center relative px-2 lg:rounded-bl-lg">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase px-2 pt-1">Nhận phòng</label>
+                    <DatePicker 
+                      value={parseDateString(localCheckIn)}
+                      minDate={new Date()}
+                      onChange={(date: Date | null) => {
+                         const str = formatDateString(date);
+                         setLocalCheckIn(str);
+                         if (localCheckOut && str && localCheckOut <= str) setLocalCheckOut('');
+                      }}
+                      placeholderText="Chọn ngày"
+                      className="w-full border-none bg-transparent p-0 text-slate-900 font-medium focus:ring-0 shadow-none px-2 pb-2 placeholder:font-normal placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  {/* Trả phòng */}
+                  <div className="w-full lg:flex-1 bg-white flex flex-col justify-center relative px-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase px-2 pt-1">Trả phòng</label>
+                    <DatePicker 
+                      value={parseDateString(localCheckOut)}
+                      minDate={localCheckIn ? addDays(parseDateString(localCheckIn)!, 1) : new Date()}
+                      onChange={(date: Date | null) => setLocalCheckOut(formatDateString(date))}
+                      placeholderText="Chọn ngày"
+                      className="w-full border-none bg-transparent p-0 text-slate-900 font-medium focus:ring-0 shadow-none px-2 pb-2 placeholder:font-normal placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  {/* Số người / Phòng */}
+                  <div className="w-full lg:flex-[1.5] bg-white flex items-center relative">
+                    <OccupancyDropdown 
+                      value={localOccupancy} 
+                      onChange={setLocalOccupancy}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Button cập nhật */}
+                  <div className="flex items-stretch shrink-0">
+                    <Button onClick={handleUpdateSearch} className="w-full lg:w-auto px-8 font-bold text-lg h-full bg-indigo-700 hover:bg-indigo-800 lg:rounded-br-lg lg:rounded-tr-none lg:rounded-bl-none rounded">
+                      Cập nhật
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Các loại phòng</h2>
+              <div className="space-y-5">
+                {(() => {
+                  const requiredAdultsPerRoom = Math.ceil(adults / rooms);
+                  const requiredChildrenPerRoom = Math.ceil(children / rooms);
+                  const matchingRoomTypes = hotel.roomTypes.filter(rt => 
+                    rt.maxAdults >= requiredAdultsPerRoom && rt.maxChildren >= requiredChildrenPerRoom
+                  );
+
+                  if (matchingRoomTypes.length === 0) {
+                    return (
+                      <div className="text-center py-12 bg-slate-50 rounded-2xl border border-slate-200">
+                        <p className="text-slate-500 font-medium text-lg">Không có phòng nào đáp ứng yêu cầu bộ lọc hiện tại.</p>
+                        <p className="text-slate-400 mt-2 text-sm">Vui lòng thay đổi số lượng người hoặc số lượng phòng ở công cụ tìm kiếm bên trên.</p>
+                      </div>
+                    );
+                  }
+
+                  return matchingRoomTypes.map(rt => {
+                    const rtImg = rt.images.find(i => i.isPrimary) || rt.images[0];
+                    const isFull = rt.availableRooms === 0;
+                    
+                    return (
                     <div key={rt.id}
                       className={`border-2 rounded-2xl overflow-hidden transition-all ${
                         isFull ? 'border-slate-100 opacity-60 cursor-not-allowed' :
@@ -223,11 +375,14 @@ const HotelDetailPage: React.FC = () => {
                       }`}>
                       <div className="sm:flex">
                         {/* Ảnh phòng */}
-                        <div className="sm:w-52 h-40 sm:h-auto bg-slate-100 shrink-0 relative overflow-hidden">
+                        <div 
+                          className="sm:w-52 h-40 sm:h-auto bg-slate-100 shrink-0 relative overflow-hidden cursor-pointer"
+                          onClick={() => setSelectedRoomTypeForModal(rt)}
+                        >
                           {rtImg ? (
-                            <img src={rtImg.url} alt={rt.name} className="w-full h-full object-cover" />
+                            <div className="w-full h-full bg-cover bg-center transition-transform hover:scale-105" style={{ backgroundImage: `url(${rtImg.url})` }} />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">Chưa có ảnh</div>
+                            <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm hover:bg-slate-200 transition-colors">Chưa có ảnh</div>
                           )}
                           {isFull && (
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -240,7 +395,12 @@ const HotelDetailPage: React.FC = () => {
                         <div className="p-5 flex-1 flex flex-col justify-between">
                           <div>
                             <div className="flex justify-between items-start">
-                              <h3 className="font-bold text-slate-900 text-base">{rt.name}</h3>
+                              <h3 
+                                className="font-bold text-slate-900 text-base cursor-pointer hover:text-indigo-600 transition-colors"
+                                onClick={() => setSelectedRoomTypeForModal(rt)}
+                              >
+                                {rt.name}
+                              </h3>
                             </div>
                             <div className="flex gap-4 mt-1 text-xs text-slate-500">
                               <span>Người lớn: {rt.maxAdults}</span>
@@ -266,23 +426,36 @@ const HotelDetailPage: React.FC = () => {
                               <span className="text-indigo-600 font-bold text-xl">{rt.basePrice.toLocaleString('vi-VN')}₫</span>
                               <span className="text-xs text-slate-400">/đêm/phòng</span>
                             </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isFull) {
-                                  navigate(`/hotels/${id}/room/${rt.id}?checkIn=${checkIn}&checkOut=${checkOut}`);
-                                }
-                              }}
-                              disabled={isFull}
-                              className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-xs font-semibold px-4 py-2 rounded-xl transition">
-                              Xem chi tiết & Đặt phòng
-                            </button>
+                            <div className="flex items-center gap-3">
+                              {isFull ? (
+                                <span className="text-sm font-semibold text-red-500">Hết phòng</span>
+                              ) : (
+                                <>
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); handleRoomCountChange(rt.id, -1, rt.availableRooms ?? rt.totalRooms); }}
+                                    disabled={(selectedRooms[rt.id] || 0) <= 0}
+                                    className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-500 hover:text-indigo-500 disabled:opacity-50 disabled:hover:border-gray-300 disabled:hover:text-gray-600 transition-colors"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="w-4 text-center font-bold text-gray-800">{selectedRooms[rt.id] || 0}</span>
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); handleRoomCountChange(rt.id, 1, rt.availableRooms ?? rt.totalRooms); }}
+                                    disabled={(selectedRooms[rt.id] || 0) >= (rt.availableRooms ?? rt.totalRooms)}
+                                    className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-500 hover:text-indigo-500 disabled:opacity-50 disabled:hover:border-gray-300 disabled:hover:text-gray-600 transition-colors"
+                                  >
+                                    +
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   );
-                })}
+                });
+                })()}
               </div>
             </div>
           </div>
@@ -378,6 +551,74 @@ const HotelDetailPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Sticky Bottom Bar for Booking */}
+      {totalRoomsSelected > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-40 p-4 transform transition-transform translate-y-0">
+          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+              <p className="text-slate-600 text-sm">
+                Bạn đã chọn <strong className="text-slate-900">{totalRoomsSelected} phòng</strong> cho <strong className="text-slate-900">{numNights} đêm</strong>
+              </p>
+              <div className="flex items-end gap-2">
+                <span className="text-sm text-slate-500">Tổng cộng:</span>
+                <span className="text-2xl font-black text-indigo-600 leading-none">{totalPrice.toLocaleString('vi-VN')}₫</span>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                if (!checkIn || !checkOut) {
+                  toast.error('Vui lòng chọn ngày nhận/trả phòng trước khi đặt phòng.');
+                  return;
+                }
+
+                // Kiểm tra sức chứa
+                const totalAdultCap = selectedRoomsArray.reduce((sum, r) => {
+                  const rt = hotel?.roomTypes.find(type => type.id === r.roomTypeId);
+                  return sum + (rt ? rt.maxAdults * r.quantity : 0);
+                }, 0);
+                const totalChildCap = selectedRoomsArray.reduce((sum, r) => {
+                  const rt = hotel?.roomTypes.find(type => type.id === r.roomTypeId);
+                  return sum + (rt ? rt.maxChildren * r.quantity : 0);
+                }, 0);
+
+                if (adults > totalAdultCap || children > totalChildCap) {
+                  toast.error(`Sức chứa của các phòng đã chọn không đủ cho ${adults} người lớn và ${children} trẻ em.`);
+                  return;
+                }
+
+                setIsBookingModalOpen(true);
+              }}
+              className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-md"
+            >
+              Đặt phòng ngay
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modals */}
+      {selectedRoomTypeForModal && (
+        <RoomTypeModal 
+          isOpen={!!selectedRoomTypeForModal} 
+          onClose={() => setSelectedRoomTypeForModal(null)} 
+          roomType={selectedRoomTypeForModal} 
+        />
+      )}
+
+      <BookingModal 
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        hotelId={hotel.id}
+        hotelName={hotel.name}
+        checkIn={checkIn}
+        checkOut={checkOut}
+        numNights={numNights}
+        adults={adults}
+        children={children}
+        selectedRooms={selectedRoomsArray}
+        totalPrice={totalPrice}
+      />
     </div>
   );
 };

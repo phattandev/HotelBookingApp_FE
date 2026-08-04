@@ -1,13 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../../services/api';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
+
+interface BookingItem {
+  roomTypeId: string;
+  roomTypeName: string;
+  roomImageUrl: string | null;
+  numRooms: number;
+  unitPrice: number;
+  subTotal: number;
+}
 
 interface BookingDetail {
   id: string;
   status: string;
   checkInDate: string;
   checkOutDate: string;
-  numRooms: number;
   totalPrice: number;
   guestName: string;
   guestPhone: string;
@@ -15,30 +25,20 @@ interface BookingDetail {
   specialRequests: string | null;
   cancelReason: string | null;
   createdAt: string;
-  roomTypeName: string;
   hotelName: string;
   hotelAddress: string;
-  roomImageUrl: string | null;
   paymentStatus: string;
   depositDeadline: string | null;
+  items: BookingItem[];
 }
 
-// Helper: Tính thời gian còn lại
-const getTimeLeft = (deadline: string) => {
-  const diff = new Date(deadline).getTime() - new Date().getTime();
-  if (diff <= 0) return 'Đã quá hạn';
-  const hours = Math.floor(diff / 3600000);
-  const mins = Math.floor((diff % 3600000) / 60000);
-  if (hours > 0) return `Còn ${hours} giờ ${mins} phút`;
-  return `Còn ${mins} phút`;
-};
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  Pending:   { label: 'Chờ xác nhận',  color: 'bg-amber-100 text-amber-700 border border-amber-200' },
-  Approved:  { label: 'Đã duyệt (Chờ cọc)', color: 'bg-blue-100 text-blue-700 border border-blue-200' },
-  Confirmed: { label: 'Đã xác nhận',   color: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
-  Cancelled: { label: 'Đã hủy',        color: 'bg-red-100 text-red-700 border border-red-200' },
-  Completed: { label: 'Hoàn thành',    color: 'bg-slate-100 text-slate-600 border border-slate-200' },
+const STATUS_MAP: Record<string, { label: string; variant: 'warning' | 'info' | 'success' | 'danger' | 'neutral' }> = {
+  Pending: { label: 'Chờ xác nhận', variant: 'warning' },
+  Approved: { label: 'Đã duyệt (Chờ cọc)', variant: 'info' },
+  Confirmed: { label: 'Đã xác nhận', variant: 'success' },
+  Cancelled: { label: 'Đã hủy', variant: 'danger' },
+  Completed: { label: 'Hoàn thành', variant: 'neutral' },
 };
 
 const BookingConfirmationPage: React.FC = () => {
@@ -47,45 +47,25 @@ const BookingConfirmationPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [paying, setPaying] = useState(false);
-
-  useEffect(() => {
-    if (!id) return;
-    fetchBooking();
-  }, [id]);
-
   const fetchBooking = async () => {
     try {
       const res = await api.get(`/bookings/${id}`);
       setBooking(res.data.data);
-    } catch (e: unknown) {
-      const err = e as { response?: { data?: { message?: string } } };
-      setError(err.response?.data?.message || 'Không thể tải thông tin đơn đặt phòng.');
+    } catch (err) {
+      console.error(err);
+      setError('Không thể tải thông tin đơn hàng');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMockPayment = async () => {
+  useEffect(() => {
     if (!id) return;
-    setPaying(true);
-    try {
-      await api.post(`/bookings/${id}/mock-payment`);
-      fetchBooking(); // Refresh dữ liệu sau khi thanh toán
-    } catch (e) {
-      // Bỏ qua lỗi
-    } finally {
-      setPaying(false);
-    }
-  };
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchBooking();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
-  const getVietQrUrl = (b: BookingDetail) => {
-    const bankBin = '970422';
-    const accountNo = '0123456789';
-    const amount = Math.round(b.totalPrice / 2); // Cọc 50%
-    const content = encodeURIComponent(`COC ${b.id.slice(0, 8).toUpperCase()}`);
-    return `https://img.vietqr.io/image/${bankBin}-${accountNo}-compact.png?amount=${amount}&addInfo=${content}&accountName=HotelBooking+Platform`;
-  };
 
   if (loading) return (
     <div className="max-w-2xl mx-auto px-4 py-20 text-center text-slate-400 text-sm">Đang tải...</div>
@@ -93,9 +73,9 @@ const BookingConfirmationPage: React.FC = () => {
 
   if (error || !booking) return (
     <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-      <p className="text-red-500 font-medium mb-4">{error || 'Không tìm thấy đơn đặt phòng.'}</p>
-      <Link to="/my-bookings" className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm hover:bg-indigo-700 transition">
-        Xem tất cả đơn của tôi
+      <p className="text-red-500 font-medium mb-4">{error || 'Không tìm thấy lịch sử đặt phòng.'}</p>
+      <Link to="/my-bookings">
+        <Button variant="primary">Xem tất cả đơn của tôi</Button>
       </Link>
     </div>
   );
@@ -123,56 +103,23 @@ const BookingConfirmationPage: React.FC = () => {
           )}
           <h1 className="text-2xl font-bold text-slate-900">
             {booking.status === 'Pending' ? 'Đặt phòng thành công!' :
-             booking.status === 'Approved' ? 'Đơn đã được duyệt!' :
-             booking.status === 'Confirmed' ? 'Đơn đã được xác nhận!' :
-             booking.status === 'Cancelled' ? 'Đơn đã bị hủy' : 'Chi tiết đơn đặt phòng'}
+              booking.status === 'Approved' ? 'Đơn đã được duyệt!' :
+                booking.status === 'Confirmed' ? 'Đơn đã được xác nhận!' :
+                  booking.status === 'Cancelled' ? 'Đơn đã bị hủy' : 'Chi tiết lịch sử đặt phòng'}
           </h1>
           {booking.status === 'Pending' && (
             <p className="text-slate-500 mt-2 text-sm">Chúng tôi đã gửi thông tin đến {booking.guestEmail}. Khách sạn sẽ xác nhận sớm.</p>
           )}
         </div>
 
-        {/* Cảnh báo thanh toán cọc */}
-        {booking.paymentStatus === 'Unpaid' && booking.status === 'Approved' && booking.depositDeadline && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 p-6 rounded-xl animate-fade-in text-center">
-            <p className="text-base text-amber-800 font-bold mb-2">Vui lòng thanh toán cọc để giữ phòng</p>
-            <p className="text-sm text-amber-700 mb-4">
-              Hạn chót: <strong>{new Date(booking.depositDeadline).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false, day: '2-digit', month: '2-digit', year: 'numeric' }).replace(',', '')}</strong>
-              {' '}· <strong>{getTimeLeft(booking.depositDeadline)}</strong>
-            </p>
-            
-            <div className="bg-white p-4 rounded-lg border border-amber-100 inline-block">
-              <p className="text-sm font-semibold text-slate-700 mb-2">Quét mã QR để thanh toán {(booking.totalPrice / 2).toLocaleString('vi-VN')}₫</p>
-              <img
-                src={getVietQrUrl(booking)}
-                alt="VietQR"
-                className="w-48 h-48 mx-auto rounded-lg border border-slate-200 shadow-sm"
-                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
-              <div className="mt-3 text-xs text-slate-600 space-y-1">
-                <p>Ngân hàng: <strong>MB Bank</strong> · STK: <strong>0123456789</strong></p>
-                <p>Nội dung: <strong className="text-indigo-600">COC {booking.id.slice(0, 8).toUpperCase()}</strong></p>
-              </div>
-            </div>
 
-            <div className="mt-4">
-              <button
-                onClick={handleMockPayment}
-                disabled={paying}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white font-semibold py-2.5 px-6 rounded-xl transition text-sm"
-              >
-                {paying ? 'Đang xử lý...' : 'Tôi đã chuyển khoản thành công'}
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Card thông tin đơn */}
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-          {/* Ảnh + tên phòng */}
-          {booking.roomImageUrl && (
+          {/* Ảnh + tên phòng (Lấy ảnh từ item đầu tiên nếu có) */}
+          {booking.items && booking.items.length > 0 && booking.items[0].roomImageUrl && (
             <div className="h-48 overflow-hidden">
-              <img src={booking.roomImageUrl} alt={booking.roomTypeName} className="w-full h-full object-cover" />
+              <img src={booking.items[0].roomImageUrl} alt={booking.hotelName} className="w-full h-full object-cover" />
             </div>
           )}
 
@@ -183,7 +130,7 @@ const BookingConfirmationPage: React.FC = () => {
                 <p className="text-xs text-slate-400 mb-1">Mã đơn</p>
                 <p className="font-mono text-xs text-slate-600 bg-slate-50 px-2 py-1 rounded">{booking.id}</p>
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${status.color}`}>{status.label}</span>
+              <Badge variant={status.variant}>{status.label}</Badge>
             </div>
 
             {/* Thông tin khách sạn */}
@@ -191,7 +138,6 @@ const BookingConfirmationPage: React.FC = () => {
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Khách sạn</p>
               <p className="font-bold text-slate-900">{booking.hotelName}</p>
               <p className="text-sm text-slate-500">{booking.hotelAddress}</p>
-              <p className="text-sm font-medium text-slate-700 mt-1">{booking.roomTypeName}</p>
             </div>
 
             {/* Ngày nhận/trả phòng */}
@@ -210,10 +156,23 @@ const BookingConfirmationPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Các phòng đã đặt */}
+            <div className="border-t border-slate-100 pt-4 space-y-3">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Phòng đã đặt</p>
+              {booking.items?.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center text-sm">
+                  <div>
+                    <p className="font-medium text-slate-900">{item.numRooms}x {item.roomTypeName}</p>
+                  </div>
+                  <p className="text-slate-700 font-semibold">{item.subTotal.toLocaleString('vi-VN')}₫</p>
+                </div>
+              ))}
+            </div>
+
             {/* Số phòng và tổng tiền */}
-            <div className="flex justify-between items-center bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+            <div className="flex justify-between items-center bg-indigo-50 rounded-xl p-4 border border-indigo-100 mt-4">
               <div>
-                <p className="text-xs text-slate-500">{booking.numRooms} phòng</p>
+                <p className="text-xs text-slate-500">{booking.items?.reduce((sum, i) => sum + i.numRooms, 0) || 0} phòng</p>
                 <p className="text-xs text-slate-500">Đặt lúc: {new Date(booking.createdAt).toLocaleString('vi-VN')}</p>
               </div>
               <div className="text-right">
@@ -244,13 +203,15 @@ const BookingConfirmationPage: React.FC = () => {
 
         {/* Nút điều hướng */}
         <div className="flex gap-3 mt-6">
-          <Link to="/my-bookings"
-            className="flex-1 text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition text-sm">
-            Xem tất cả đơn của tôi
+          <Link to="/my-bookings" className="flex-1">
+            <Button variant="primary" className="w-full">
+              Xem tất cả đơn của tôi
+            </Button>
           </Link>
-          <Link to="/hotels"
-            className="flex-1 text-center bg-white hover:bg-slate-50 text-slate-700 font-semibold py-3 rounded-xl border border-slate-200 transition text-sm">
-            Tiếp tục tìm kiếm
+          <Link to="/hotels" className="flex-1">
+            <Button variant="outline" className="w-full">
+              Tiếp tục tìm kiếm
+            </Button>
           </Link>
         </div>
       </div>

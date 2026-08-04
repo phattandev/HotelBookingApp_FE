@@ -86,7 +86,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else if (userRole === 'manager') {
       navigate('/manager'); // Chuyển vào trang Quản lý Khách sạn
     } else {
-      navigate('/'); // Khách hàng bình thường về trang chủ
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectUrl = searchParams.get('redirect');
+      if (redirectUrl) {
+        navigate(redirectUrl);
+      } else {
+        navigate('/'); // Khách hàng bình thường về trang chủ
+      }
     }
   };
 

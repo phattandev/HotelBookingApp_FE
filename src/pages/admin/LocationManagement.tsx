@@ -3,6 +3,14 @@ import api from '../../services/api';
 import SearchableSelect from '../../components/SearchableSelect';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../components/ConfirmModal';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
+import { Button } from '../../components/ui/Button';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { Tabs } from '../../components/ui/Tabs';
+import { Pagination } from '../../components/ui/Pagination';
+import { SidePanel } from '../../components/ui/SidePanel';
+import { Badge } from '../../components/ui/Badge';
 
 interface Province { id: string; code: string; name: string; slug: string; type: string; isActive?: boolean; }
 interface Ward { id: string; code: string; name: string; slug: string; type: string; provinceId: string; isActive?: boolean; }
@@ -167,81 +175,104 @@ const LocationManagement: React.FC = () => {
     catch (err: any) { toast.error(err.response?.data?.Message || 'Thao tác thất bại'); }
   };
 
-  const inputCls = 'w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500';
-  const selectCls = 'border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white';
-
   return (
     <div className="w-full">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Quản lý địa điểm</h1>
-          <p className="text-sm text-slate-500 mt-1">Cấu hình Tỉnh/Thành phố và Phường/Xã cho hệ thống</p>
-        </div>
-        <button
-          onClick={() => activeTab === 'provinces' ? openProvModal() : openWardModal()}
-          className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition"
-        >
-          Thêm {activeTab === 'provinces' ? 'Tỉnh/Thành' : 'Phường/Xã'}
-        </button>
-      </div>
+      <PageHeader
+        title="Quản lý địa điểm"
+        description="Cấu hình Tỉnh/Thành phố và Phường/Xã cho hệ thống"
+        action={
+          <Button
+            onClick={() => activeTab === 'provinces' ? openProvModal() : openWardModal()}
+            variant="primary"
+          >
+            Thêm {activeTab === 'provinces' ? 'Tỉnh/Thành' : 'Phường/Xã'}
+          </Button>
+        }
+      />
 
       {/* Tabs */}
-      <div className="flex gap-4 mb-4 border-b border-slate-200">
-        <button onClick={() => setActiveTab('provinces')} className={`pb-2 px-1 text-sm font-semibold transition-colors ${activeTab === 'provinces' ? 'text-violet-600 border-b-2 border-violet-600' : 'text-slate-500 hover:text-slate-800'}`}>
-          Tỉnh / Thành phố ({provinces.length})
-        </button>
-        <button onClick={() => setActiveTab('wards')} className={`pb-2 px-1 text-sm font-semibold transition-colors ${activeTab === 'wards' ? 'text-violet-600 border-b-2 border-violet-600' : 'text-slate-500 hover:text-slate-800'}`}>
-          Quận / Huyện / Phường / Xã ({wards.length})
-        </button>
+      <div className="mb-4">
+        <Tabs
+          tabs={[
+            { value: 'provinces', label: 'Tỉnh / Thành phố', count: provinces.length },
+            { value: 'wards', label: 'Quận / Huyện / Phường / Xã', count: wards.length }
+          ]}
+          activeTab={activeTab}
+          onChange={(val) => setActiveTab(val as 'provinces' | 'wards')}
+          variant="line"
+        />
       </div>
 
       {/* Toolbar: Search + Filters */}
-      <div className="flex flex-wrap gap-3 mb-4 p-4 bg-white rounded-xl border border-slate-200">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          placeholder={activeTab === 'provinces' ? 'Tìm theo tên tỉnh/thành, mã...' : 'Tìm theo tên phường/xã, mã...'}
-          className="flex-1 min-w-[200px] border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-        />
+      <div className="flex flex-wrap gap-3 mb-4 p-4 bg-white rounded-xl border border-slate-200 items-end">
+        <div className="flex-1 min-w-[200px]">
+          <Input
+            label="Tìm kiếm"
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder={activeTab === 'provinces' ? 'Tìm theo tên tỉnh/thành, mã...' : 'Tìm theo tên phường/xã, mã...'}
+          />
+        </div>
 
         {activeTab === 'provinces' && (
-          <select value={provTypeFilter} onChange={e => setProvTypeFilter(e.target.value)} className={selectCls}>
-            <option value="">Tất cả loại</option>
-            <option value="Tỉnh">Tỉnh</option>
-            <option value="Thành phố">Thành phố trực thuộc TW</option>
-          </select>
+          <div className="w-44">
+            <Select
+              label="Phân loại"
+              value={provTypeFilter}
+              onChange={val => setProvTypeFilter(val)}
+              options={[
+                { value: '', label: 'Tất cả loại' },
+                { value: 'Tỉnh', label: 'Tỉnh' },
+                { value: 'Thành phố', label: 'Thành phố trực thuộc TW' },
+              ]}
+            />
+          </div>
         )}
 
         {activeTab === 'wards' && (
           <>
-            <select value={wardProvinceFilter} onChange={e => setWardProvinceFilter(e.target.value)} className={`${selectCls} min-w-[180px]`}>
-              <option value="">Tất cả tỉnh/thành</option>
-              {provinces.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-            <select value={wardTypeFilter} onChange={e => setWardTypeFilter(e.target.value)} className={selectCls}>
-              <option value="">Tất cả loại</option>
-              <option value="Phường">Phường</option>
-              <option value="Xã">Xã</option>
-              <option value="Quận">Quận</option>
-              <option value="Huyện">Huyện</option>
-              <option value="Thị trấn">Thị trấn</option>
-              <option value="Thành phố">Thành phố (thuộc tỉnh)</option>
-            </select>
+            <div className="min-w-[180px]">
+              <Select
+                label="Tỉnh/Thành phố"
+                value={wardProvinceFilter}
+                onChange={val => setWardProvinceFilter(val)}
+                options={[
+                  { value: '', label: 'Tất cả tỉnh/thành' },
+                  ...provinces.map(p => ({ value: p.id, label: p.name }))
+                ]}
+              />
+            </div>
+            <div className="w-44">
+              <Select
+                label="Phân loại"
+                value={wardTypeFilter}
+                onChange={val => setWardTypeFilter(val)}
+                options={[
+                  { value: '', label: 'Tất cả loại' },
+                  { value: 'Phường', label: 'Phường' },
+                  { value: 'Xã', label: 'Xã' },
+                  { value: 'Quận', label: 'Quận' },
+                  { value: 'Huyện', label: 'Huyện' },
+                  { value: 'Thị trấn', label: 'Thị trấn' },
+                  { value: 'Thành phố', label: 'Thành phố (thuộc tỉnh)' },
+                ]}
+              />
+            </div>
           </>
         )}
 
         {(searchQuery || provTypeFilter || wardTypeFilter || wardProvinceFilter) && (
-          <button onClick={() => { setSearchQuery(''); setProvTypeFilter(''); setWardTypeFilter(''); setWardProvinceFilter(''); }}
-            className="px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+          <Button
+            onClick={() => { setSearchQuery(''); setProvTypeFilter(''); setWardTypeFilter(''); setWardProvinceFilter(''); }}
+            variant="ghost"
+            className="!bg-slate-100 !text-slate-600 hover:!bg-slate-200 border-none shadow-none mb-1"
+          >
             Xóa lọc
-          </button>
+          </Button>
         )}
 
-        <span className="px-3 py-2 text-xs text-slate-500 font-medium self-center">
-          {list.length} kết quả
-        </span>
+        {/* Removed redundant result count span */}
       </div>
 
       {/* Table */}
@@ -250,7 +281,7 @@ const LocationManagement: React.FC = () => {
           <div className="p-10 text-center text-slate-400">Đang tải...</div>
         ) : (
           <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            <thead className="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-100">
               <tr>
                 <th className="px-5 py-3">Mã</th>
                 <th className="px-5 py-3">Tên {activeTab === 'provinces' ? 'Tỉnh/Thành' : 'Phường/Xã'}</th>
@@ -266,13 +297,9 @@ const LocationManagement: React.FC = () => {
                   <td className="px-5 py-3 font-semibold text-slate-800">{item.name}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600">
-                        {item.type}
-                      </span>
+                      <Badge variant="neutral">{item.type}</Badge>
                       {item.isActive === false && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-600">
-                          Đã ẩn
-                        </span>
+                        <Badge variant="danger">Đã ẩn</Badge>
                       )}
                     </div>
                   </td>
@@ -283,16 +310,16 @@ const LocationManagement: React.FC = () => {
                   )}
                   <td className="px-5 py-3 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => activeTab === 'provinces' ? openProvModal(item) : openWardModal(item)}
-                        className="px-3 py-1.5 text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-lg transition">
+                      <Button size="sm" variant="secondary" onClick={() => activeTab === 'provinces' ? openProvModal(item) : openWardModal(item)}>
                         Sửa
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={item.isActive === false ? 'primary' : 'danger'}
                         onClick={() => activeTab === 'provinces' ? handleProvDelete(item.id, item.isActive ?? true) : handleWardDelete(item.id, item.isActive ?? true)}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${item.isActive === false ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' : 'text-red-600 bg-red-50 hover:bg-red-100'}`}>
+                      >
                         {item.isActive === false ? 'Hiện' : 'Ẩn'}
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -304,99 +331,79 @@ const LocationManagement: React.FC = () => {
           </table>
         )}
 
-        {totalPages > 1 && (
-          <div className="p-4 bg-slate-50 border-t flex justify-between items-center text-xs">
-            <span className="text-slate-500">Trang {currentPage} / {totalPages} — {list.length} kết quả</span>
-            <div className="flex gap-2">
-              <button disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)}
-                className="px-3 py-1 bg-white border border-slate-200 rounded-lg disabled:opacity-40 hover:bg-slate-50 transition">Trước</button>
-              <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(c => c + 1)}
-                className="px-3 py-1 bg-white border border-slate-200 rounded-lg disabled:opacity-40 hover:bg-slate-50 transition">Sau</button>
-            </div>
-          </div>
-        )}
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {/* PROVINCE MODAL */}
-      {isProvModalOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
-            <h3 className="font-bold text-slate-900 mb-5">{editingProv ? 'Sửa Tỉnh/Thành' : 'Thêm Tỉnh/Thành'}</h3>
-            <form onSubmit={handleProvSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Mã vùng</label>
-                <input required value={provCode} onChange={e => setProvCode(e.target.value)} placeholder="VD: 01, HN" className={inputCls} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Tên Tỉnh/Thành</label>
-                <input required value={provName} onChange={e => setProvName(e.target.value)} placeholder="VD: Hà Nội" className={inputCls} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Phân loại</label>
-                <select value={provType} onChange={e => setProvType(e.target.value)} className={inputCls}>
-                  <option value="Tỉnh">Tỉnh</option>
-                  <option value="Thành phố">Thành phố trực thuộc Trung Ương</option>
-                </select>
-              </div>
-              <div className="flex justify-end gap-3 pt-2 border-t border-slate-100 mt-4">
-                <button type="button" onClick={() => setIsProvModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium transition">Hủy</button>
-                <button type="submit" disabled={submitting}
-                  className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition">
-                  {submitting ? 'Đang lưu...' : 'Lưu'}
-                </button>
-              </div>
-            </form>
-          </div>
+      <SidePanel
+        isOpen={isProvModalOpen}
+        onClose={() => setIsProvModalOpen(false)}
+        title={editingProv ? 'Sửa Tỉnh/Thành' : 'Thêm Tỉnh/Thành'}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setIsProvModalOpen(false)}>Hủy</Button>
+            <Button variant="primary" onClick={handleProvSubmit} isLoading={submitting}>Lưu</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Input required label="Mã vùng" value={provCode} onChange={e => setProvCode(e.target.value)} placeholder="VD: 01, HN" />
+          <Input required label="Tên Tỉnh/Thành" value={provName} onChange={e => setProvName(e.target.value)} placeholder="VD: Hà Nội" />
+          <Select 
+            label="Phân loại" 
+            value={provType} 
+            onChange={val => setProvType(val)} 
+            options={[
+              { value: 'Tỉnh', label: 'Tỉnh' },
+              { value: 'Thành phố', label: 'Thành phố trực thuộc Trung Ương' }
+            ]} 
+          />
         </div>
-      )}
+      </SidePanel>
 
       {/* WARD MODAL */}
-      {isWardModalOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
-            <h3 className="font-bold text-slate-900 mb-5">{editingWard ? 'Sửa Phường/Xã' : 'Thêm Phường/Xã'}</h3>
-            <form onSubmit={handleWardSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Thuộc Tỉnh/Thành phố</label>
-                <SearchableSelect
-                  options={provinces.map(p => ({ value: p.id, label: p.name }))}
-                  value={wardProvinceId}
-                  onChange={(val) => setWardProvinceId(val)}
-                  placeholder="-- Chọn Tỉnh/Thành --"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Mã vùng</label>
-                <input required value={wardCode} onChange={e => setWardCode(e.target.value)} placeholder="VD: 001" className={inputCls} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Tên Phường/Xã</label>
-                <input required value={wardName} onChange={e => setWardName(e.target.value)} placeholder="VD: Phường Ba Đình" className={inputCls} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Phân loại</label>
-                <select value={wardType} onChange={e => setWardType(e.target.value)} className={inputCls}>
-                  <option value="Xã">Xã</option>
-                  <option value="Phường">Phường</option>
-                  <option value="Thị trấn">Thị trấn</option>
-                  <option value="Quận">Quận</option>
-                  <option value="Huyện">Huyện</option>
-                  <option value="Thành phố">Thành phố (thuộc tỉnh)</option>
-                </select>
-              </div>
-              <div className="flex justify-end gap-3 pt-2 border-t border-slate-100 mt-4">
-                <button type="button" onClick={() => setIsWardModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium transition">Hủy</button>
-                <button type="submit" disabled={submitting}
-                  className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition">
-                  {submitting ? 'Đang lưu...' : 'Lưu'}
-                </button>
-              </div>
-            </form>
+      <SidePanel
+        isOpen={isWardModalOpen}
+        onClose={() => setIsWardModalOpen(false)}
+        title={editingWard ? 'Sửa Phường/Xã' : 'Thêm Phường/Xã'}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setIsWardModalOpen(false)}>Hủy</Button>
+            <Button variant="primary" onClick={handleWardSubmit} isLoading={submitting}>Lưu</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Thuộc Tỉnh/Thành phố</label>
+            <SearchableSelect
+              options={provinces.map(p => ({ value: p.id, label: p.name }))}
+              value={wardProvinceId}
+              onChange={(val) => setWardProvinceId(val)}
+              placeholder="-- Chọn Tỉnh/Thành --"
+            />
           </div>
+          <Input required label="Mã vùng" value={wardCode} onChange={e => setWardCode(e.target.value)} placeholder="VD: 001" />
+          <Input required label="Tên Phường/Xã" value={wardName} onChange={e => setWardName(e.target.value)} placeholder="VD: Phường Ba Đình" />
+          <Select 
+            label="Phân loại" 
+            value={wardType} 
+            onChange={val => setWardType(val)} 
+            options={[
+              { value: 'Xã', label: 'Xã' },
+              { value: 'Phường', label: 'Phường' },
+              { value: 'Thị trấn', label: 'Thị trấn' },
+              { value: 'Quận', label: 'Quận' },
+              { value: 'Huyện', label: 'Huyện' },
+              { value: 'Thành phố', label: 'Thành phố (thuộc tỉnh)' }
+            ]} 
+          />
         </div>
-      )}
+      </SidePanel>
     </div>
   );
 };
