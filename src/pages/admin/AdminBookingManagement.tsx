@@ -322,7 +322,11 @@ const AdminBookingManagement: React.FC = () => {
                             <p className="font-medium text-slate-700">{b.hotelName}</p>
                             <p className="text-xs text-slate-400">{b.businessName}</p>
                           </td>
-                          <td className="px-4 py-3 text-slate-600">{b.roomTypeName}</td>
+                          <td className="px-4 py-3 text-slate-600">
+                            {b.items && b.items.length > 0 
+                              ? b.items[0].roomTypeName + (b.items.length > 1 ? ` và ${b.items.length - 1} loại khác` : '')
+                              : ''}
+                          </td>
                           <td className="px-4 py-3">
                             <p className="text-slate-700 font-medium">
                               {new Date(b.checkInDate).toLocaleDateString('vi-VN')}
@@ -331,7 +335,9 @@ const AdminBookingManagement: React.FC = () => {
                               → {new Date(b.checkOutDate).toLocaleDateString('vi-VN')} · {nights}đ
                             </p>
                           </td>
-                          <td className="px-4 py-3 text-center text-slate-700 font-medium">{b.numRooms}</td>
+                          <td className="px-4 py-3 text-center text-slate-700 font-medium">
+                            {b.items?.reduce((sum, item) => sum + item.numRooms, 0) || 0}
+                          </td>
                           <td className="px-4 py-3 text-right font-bold text-violet-700">{fmtMoney(b.totalPrice)}</td>
                           <td className="px-4 py-3">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${st.color}`}>{st.label}</span>
@@ -434,8 +440,18 @@ function BookingDetailModal({ booking, onClose }: { booking: AdminBookingItem; o
             <div className="bg-slate-50 rounded-xl p-4 space-y-1">
               <Row label="Khách sạn" value={booking.hotelName} />
               <Row label="Doanh nghiệp" value={booking.businessName} />
-              <Row label="Loại phòng" value={booking.roomTypeName} />
-              <Row label="Số phòng" value={`${booking.numRooms} phòng`} />
+              <Row 
+                label="Các loại phòng" 
+                value={
+                  <ul className="text-right">
+                    {booking.items?.map((item, idx) => (
+                      <li key={idx}>
+                        {item.roomTypeName} <span className="text-slate-400">x{item.numRooms}</span>
+                      </li>
+                    ))}
+                  </ul>
+                } 
+              />
               <Row label="Check-in" value={new Date(booking.checkInDate).toLocaleDateString('vi-VN')} />
               <Row label="Check-out" value={new Date(booking.checkOutDate).toLocaleDateString('vi-VN')} />
               <Row label="Số đêm" value={`${nights} đêm`} />

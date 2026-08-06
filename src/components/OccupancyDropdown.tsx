@@ -55,8 +55,8 @@ const OccupancyDropdown: React.FC<OccupancyDropdownProps> = ({ value, onChange, 
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 z-50 p-4">
-          <div className="space-y-4">
+        <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50 p-5">
+          <div className="space-y-5">
             {/* Rooms */}
             <div className="flex items-center justify-between">
               <div>
@@ -67,15 +67,15 @@ const OccupancyDropdown: React.FC<OccupancyDropdownProps> = ({ value, onChange, 
                   type="button"
                   onClick={() => handleDecrement('rooms', 1)}
                   disabled={value.rooms <= 1}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-blue-500 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <FaMinus size={12} />
                 </button>
-                <span className="w-4 text-center font-medium">{value.rooms}</span>
+                <span className="w-8 text-center font-medium text-slate-900">{value.rooms}</span>
                 <button
                   type="button"
                   onClick={() => handleIncrement('rooms')}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-blue-500 hover:text-blue-500 transition-colors"
+                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-colors"
                 >
                   <FaPlus size={12} />
                 </button>
@@ -93,15 +93,15 @@ const OccupancyDropdown: React.FC<OccupancyDropdownProps> = ({ value, onChange, 
                   type="button"
                   onClick={() => handleDecrement('adults', 1)}
                   disabled={value.adults <= 1}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-blue-500 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <FaMinus size={12} />
                 </button>
-                <span className="w-4 text-center font-medium">{value.adults}</span>
+                <span className="w-8 text-center font-medium text-slate-900">{value.adults}</span>
                 <button
                   type="button"
                   onClick={() => handleIncrement('adults')}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-blue-500 hover:text-blue-500 transition-colors"
+                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-colors"
                 >
                   <FaPlus size={12} />
                 </button>
@@ -119,15 +119,15 @@ const OccupancyDropdown: React.FC<OccupancyDropdownProps> = ({ value, onChange, 
                   type="button"
                   onClick={() => handleDecrement('children', 0)}
                   disabled={value.children <= 0}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-blue-500 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <FaMinus size={12} />
                 </button>
-                <span className="w-4 text-center font-medium">{value.children}</span>
+                <span className="w-8 text-center font-medium text-slate-900">{value.children}</span>
                 <button
                   type="button"
                   onClick={() => handleIncrement('children')}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-blue-500 hover:text-blue-500 transition-colors"
+                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-colors"
                 >
                   <FaPlus size={12} />
                 </button>
@@ -138,7 +138,7 @@ const OccupancyDropdown: React.FC<OccupancyDropdownProps> = ({ value, onChange, 
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                className="w-full py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
               >
                 Xong
               </button>

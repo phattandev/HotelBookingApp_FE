@@ -3,6 +3,15 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../components/ConfirmModal';
 
+export interface BookingRoomItem {
+  roomTypeId: string;
+  roomTypeName: string;
+  numRooms: number;
+  unitPrice: number;
+  subTotal: number;
+  roomImageUrl: string | null;
+}
+
 export interface BookingItem {
   id: string;
   status: string;
@@ -11,15 +20,14 @@ export interface BookingItem {
   depositDeadline: string;
   checkInDate: string;
   checkOutDate: string;
-  numRooms: number;
   totalPrice: number;
   guestName: string;
   guestPhone: string;
   guestEmail: string;
   cancelReason: string | null;
   createdAt: string;
-  roomTypeName: string;
   hotelName: string;
+  items: BookingRoomItem[];
 }
 
 export const useHotelBookingManagement = () => {

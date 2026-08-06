@@ -69,8 +69,14 @@ const HotelBookingManagement: React.FC = () => {
     },
     {
       key: 'roomType',
-      header: 'Loại phòng',
-      render: (b: BookingItem) => <span className="font-medium text-slate-700">{b.roomTypeName}</span>
+      header: 'Các loại phòng',
+      render: (b: BookingItem) => (
+        <span className="font-medium text-slate-700">
+          {b.items && b.items.length > 0 
+            ? b.items[0].roomTypeName + (b.items.length > 1 ? ` và ${b.items.length - 1} loại khác` : '')
+            : ''}
+        </span>
+      )
     },
     {
       key: 'stay',
@@ -90,7 +96,11 @@ const HotelBookingManagement: React.FC = () => {
       key: 'quantity',
       header: 'SL',
       align: 'center' as const,
-      render: (b: BookingItem) => <span className="font-semibold text-slate-700">{b.numRooms}</span>
+      render: (b: BookingItem) => (
+        <span className="font-semibold text-slate-700">
+          {b.items?.reduce((sum, item) => sum + item.numRooms, 0) || 0}
+        </span>
+      )
     },
     {
       key: 'total',
@@ -327,8 +337,18 @@ function ManagerBookingDetailModal({
         <div>
           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Thông tin đặt phòng</p>
           <div className="bg-slate-50 rounded-xl p-4 space-y-1">
-            <Row label="Loại phòng" value={booking.roomTypeName} />
-            <Row label="Số phòng" value={`${booking.numRooms} phòng`} />
+            <Row 
+              label="Các loại phòng" 
+              value={
+                <ul className="text-right">
+                  {booking.items?.map((item, idx) => (
+                    <li key={idx}>
+                      {item.roomTypeName} <span className="text-slate-400">x{item.numRooms}</span>
+                    </li>
+                  ))}
+                </ul>
+              } 
+            />
             <Row label="Check-in" value={new Date(booking.checkInDate).toLocaleDateString('vi-VN')} />
             <Row label="Check-out" value={new Date(booking.checkOutDate).toLocaleDateString('vi-VN')} />
             <Row label="Số đêm" value={`${nights} đêm`} />

@@ -81,13 +81,25 @@ const HotelDetailPage: React.FC = () => {
       toast.error('Ngày trả phòng phải sau ngày nhận phòng!');
       return;
     }
+    if (hotel) {
+      const totalAvailableInHotel = hotel.roomTypes.reduce((sum, rt) => sum + (rt.availableRooms ?? rt.totalRooms), 0);
+      if (localOccupancy.rooms > totalAvailableInHotel) {
+        toast.error(`Khách sạn hiện chỉ còn trống tổng cộng ${totalAvailableInHotel} phòng trong khoảng thời gian này.`);
+        return;
+      }
+    }
+
     const p = new URLSearchParams(searchParams);
     p.set('checkIn', localCheckIn);
     p.set('checkOut', localCheckOut);
     p.set('rooms', localOccupancy.rooms.toString());
     p.set('adults', localOccupancy.adults.toString());
     p.set('children', localOccupancy.children.toString());
+    
+    // Đặt lại số lượng phòng đã chọn về 0 khi bộ lọc thay đổi
+    setSelectedRooms({});
     setSearchParams(p);
+    toast.success('Đã cập nhật yêu cầu tìm kiếm!');
   };
 
   const parseDateString = (dateStr: string) => {

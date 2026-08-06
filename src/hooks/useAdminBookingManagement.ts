@@ -3,6 +3,15 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 
 // ── Types ──
+export interface BookingRoomItem {
+  roomTypeId: string;
+  roomTypeName: string;
+  numRooms: number;
+  unitPrice: number;
+  subTotal: number;
+  roomImageUrl: string | null;
+}
+
 export interface AdminBookingItem {
   id: string;
   guestName: string;
@@ -10,16 +19,15 @@ export interface AdminBookingItem {
   guestEmail: string;
   hotelName: string;
   businessName: string;
-  roomTypeName: string;
   checkInDate: string;
   checkOutDate: string;
-  numRooms: number;
   totalPrice: number;
   depositAmount: number;
   status: string;
   paymentStatus: string;
   cancelReason: string | null;
   createdAt: string;
+  items: BookingRoomItem[];
 }
 
 export interface AdminTopHotel {
