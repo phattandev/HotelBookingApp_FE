@@ -1,123 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import toast from 'react-hot-toast';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useLogin } from '../../hooks/useLogin';
+import { Input } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
 
 const Login: React.FC = () => {
-  const { login, registerUser, registerBusiness } = useAuth();
-
-  // Trạng thái trượt: 0 = Đăng nhập, 1 = Đăng ký, 2 = Doanh nghiệp
-  const [activeTab, setActiveTab] = useState<0 | 1 | 2>(0);
-
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // --- State Form Đăng nhập ---
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-
-  // --- State Form Đăng ký User ---
-  const [regUserEmail, setRegUserEmail] = useState('');
-  const [regUserPassword, setRegUserPassword] = useState('');
-  const [regUserConfirm, setRegUserConfirm] = useState('');
-
-  // --- State Form Đăng ký Doanh nghiệp ---
-  const [bizName, setBizName] = useState('');
-  const [bizTaxCode, setBizTaxCode] = useState('');
-  const [bizAddress, setBizAddress] = useState('');
-  const [repName, setRepName] = useState('');
-  const [repPosition, setRepPosition] = useState('');
-  const [repPhone, setRepPhone] = useState('');
-  const [repEmail, setRepEmail] = useState('');
-  const [bizPassword, setBizPassword] = useState('');
-  const [bizConfirm, setBizConfirm] = useState('');
-
-  useEffect(() => {
-    setError(''); // Xóa lỗi khi chuyển tab
-  }, [activeTab]);
-
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-    try {
-      await login({ usernameOrEmail: loginEmail, password: loginPassword });
-    } catch (err: any) {
-      const responseData = err.response?.data;
-      const validationErrors = responseData?.Errors || responseData?.errors;
-      if (validationErrors && validationErrors.length > 0) {
-        setError(validationErrors.join('\n'));
-      } else {
-        setError(responseData?.Message || responseData?.message || 'Đăng nhập thất bại.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleRegisterUserSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (regUserPassword !== regUserConfirm) {
-      return setError('Mật khẩu xác nhận không khớp.');
-    }
-
-    setIsSubmitting(true);
-    try {
-      // Map chính xác tên biến với Backend DTO (RegisterUserCommand)
-      await registerUser({
-        email: regUserEmail,
-        password: regUserPassword,
-        confirmPassword: regUserConfirm
-      });
-      toast.success('Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.');
-    } catch (err: any) {
-      const responseData = err.response?.data;
-      const validationErrors = responseData?.Errors || responseData?.errors;
-      if (validationErrors && validationErrors.length > 0) {
-        setError(validationErrors.join('\n'));
-      } else {
-        setError(responseData?.Message || responseData?.message || 'Đăng ký thất bại.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleRegisterBizSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (bizPassword !== bizConfirm) {
-      return setError('Mật khẩu xác nhận không khớp.');
-    }
-
-    setIsSubmitting(true);
-    try {
-      // Map chính xác tên biến với Backend DTO (RegisterBusinessCommand)
-      await registerBusiness({
-        businessName: bizName,
-        taxCode: bizTaxCode,
-        businessAddress: bizAddress,
-        representativeName: repName,
-        position: repPosition,
-        representativePhone: repPhone,
-        representativeEmail: repEmail,
-        password: bizPassword,
-        confirmPassword: bizConfirm
-      });
-      toast.success('Đăng ký doanh nghiệp thành công! Vui lòng chờ Admin phê duyệt tài khoản.');
-      setActiveTab(0); // Chuyển về tab Đăng nhập
-    } catch (err: any) {
-      const responseData = err.response?.data;
-      const validationErrors = responseData?.Errors || responseData?.errors;
-      if (validationErrors && validationErrors.length > 0) {
-        setError(validationErrors.join('\n'));
-      } else {
-        setError(responseData?.Message || responseData?.message || 'Đăng ký doanh nghiệp thất bại.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    activeTab, setActiveTab,
+    error,
+    isSubmitting,
+    loginData,
+    regUserData,
+    regBizData,
+    handleLoginSubmit,
+    handleRegisterUserSubmit,
+    handleRegisterBizSubmit
+  } = useLogin();
 
   return (
     <div
@@ -132,7 +30,13 @@ const Login: React.FC = () => {
 
         {/* Header & Menu trượt */}
         <div className="p-6 pb-0">
-          <div className="text-center mb-6">
+          <div className="relative text-center mb-6">
+            <Link to="/" className="absolute left-0 top-0 text-white/60 hover:text-white text-sm flex items-center gap-1 transition-colors">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Về trang chủ
+            </Link>
             <h1 className="text-3xl font-bold tracking-tight">HotelBooking</h1>
             <p className="text-white/80 mt-2">Nơi nghỉ chân hoàn hảo cho chuyến hành trình dài của bạn</p>
           </div>
@@ -182,125 +86,165 @@ const Login: React.FC = () => {
             {/* --- PANEL 1: ĐĂNG NHẬP --- */}
             <div className="w-1/3 p-6 h-full overflow-y-auto custom-scrollbar">
               <form onSubmit={handleLoginSubmit} className="space-y-4 max-w-sm mx-auto mt-4">
-                <div>
-                  <label className="block text-sm font-medium text-white/90 mb-1">Email hoặc Tài khoản</label>
-                  <input type="text" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none placeholder-white/30 text-white"
-                    placeholder="Nhập email..." />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white/90 mb-1">Mật khẩu</label>
-                  <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none placeholder-white/30 text-white"
-                    placeholder="••••••••" />
-                </div>
-                <div className="flex items-center justify-between text-sm mt-4">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input type="checkbox" className="rounded bg-white/10 border-white/20 text-indigo-500 focus:ring-indigo-500/50" />
-                    <span className="text-white/80">Nhớ mật khẩu</span>
-                  </label>
-                  <a href="#" className="text-white hover:underline">Quên mật khẩu?</a>
-                </div>
-                <button type="submit" disabled={isSubmitting}
-                  className="w-full mt-6 py-2.5 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transition duration-200 shadow-lg disabled:opacity-70"
+                <Input
+                  label="Email hoặc Tài khoản"
+                  type="text"
+                  variant="glass"
+                  value={loginData.loginEmail}
+                  onChange={(e) => loginData.setLoginEmail(e.target.value)}
+                  required
+                  placeholder="Nhập email..."
+                />
+                <Input
+                  label="Mật khẩu"
+                  type="password"
+                  variant="glass"
+                  value={loginData.loginPassword}
+                  onChange={(e) => loginData.setLoginPassword(e.target.value)}
+                  required
+                  placeholder="••••••••"
+                />
+                
+                <Button 
+                  type="submit" 
+                  isLoading={isSubmitting}
+                  className="w-full mt-8 !bg-white !text-slate-900 hover:!bg-slate-100"
                 >
-                  {isSubmitting ? 'Đang xử lý...' : 'Đăng Nhập'}
-                </button>
+                  Đăng Nhập
+                </Button>
               </form>
             </div>
 
             {/* --- PANEL 2: ĐĂNG KÝ USER/ADMIN --- */}
             <div className="w-1/3 p-6 h-full overflow-y-auto custom-scrollbar">
               <form onSubmit={handleRegisterUserSubmit} className="space-y-4 max-w-sm mx-auto mt-4">
-                <div>
-                  <label className="block text-sm font-medium text-white/90 mb-1">Email</label>
-                  <input type="email" value={regUserEmail} onChange={(e) => setRegUserEmail(e.target.value)} required
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none placeholder-white/30 text-white" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white/90 mb-1">Mật khẩu</label>
-                  <input type="password" value={regUserPassword} onChange={(e) => setRegUserPassword(e.target.value)} required
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none placeholder-white/30 text-white" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white/90 mb-1">Xác nhận mật khẩu</label>
-                  <input type="password" value={regUserConfirm} onChange={(e) => setRegUserConfirm(e.target.value)} required
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none placeholder-white/30 text-white" />
-                </div>
-                <button type="submit"
-                  className="w-full mt-6 py-2.5 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600 transition duration-200 shadow-lg"
+                <Input
+                  label="Email"
+                  type="email"
+                  variant="glass"
+                  value={regUserData.regUserEmail}
+                  onChange={(e) => regUserData.setRegUserEmail(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Mật khẩu"
+                  type="password"
+                  variant="glass"
+                  value={regUserData.regUserPassword}
+                  onChange={(e) => regUserData.setRegUserPassword(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Xác nhận mật khẩu"
+                  type="password"
+                  variant="glass"
+                  value={regUserData.regUserConfirm}
+                  onChange={(e) => regUserData.setRegUserConfirm(e.target.value)}
+                  required
+                />
+                
+                <Button 
+                  type="submit" 
+                  isLoading={isSubmitting}
+                  className="w-full mt-8 !bg-white !text-slate-900 hover:!bg-slate-100"
                 >
                   Tạo Tài Khoản
-                </button>
+                </Button>
               </form>
             </div>
 
             {/* --- PANEL 3: ĐĂNG KÝ DOANH NGHIỆP --- */}
             <div className="w-1/3 p-6 h-full overflow-y-auto custom-scrollbar">
               <form onSubmit={handleRegisterBizSubmit} className="space-y-5 mt-2">
-
                 <h3 className="font-semibold text-white/90 border-b border-white/20 pb-2">1. Thông tin pháp lý & Doanh nghiệp</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-white/90 mb-1">Tên doanh nghiệp</label>
-                    <input type="text" value={bizName} onChange={(e) => setBizName(e.target.value)} required
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none text-white" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-white/90 mb-1">Mã số thuế</label>
-                    <input type="text" value={bizTaxCode} onChange={(e) => setBizTaxCode(e.target.value)} required
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none text-white" />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-white/90 mb-1">Địa chỉ đăng ký kinh doanh</label>
-                    <input type="text" value={bizAddress} onChange={(e) => setBizAddress(e.target.value)} required
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none text-white" />
-                  </div>
+                  <Input
+                    label="Tên doanh nghiệp"
+                    variant="glass"
+                    value={regBizData.bizName}
+                    onChange={(e) => regBizData.setBizName(e.target.value)}
+                    required
+                  />
+                  <Input
+                    label="Mã số thuế"
+                    variant="glass"
+                    value={regBizData.bizTaxCode}
+                    onChange={(e) => regBizData.setBizTaxCode(e.target.value)}
+                    required
+                  />
+                  <Input
+                    label="Địa chỉ đăng ký kinh doanh"
+                    variant="glass"
+                    className="sm:col-span-2"
+                    value={regBizData.bizAddress}
+                    onChange={(e) => regBizData.setBizAddress(e.target.value)}
+                    required
+                  />
                 </div>
 
                 <h3 className="font-semibold text-white/90 border-b border-white/20 pb-2 pt-2">2. Thông tin người đại diện</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-white/90 mb-1">Họ tên</label>
-                    <input type="text" value={repName} onChange={(e) => setRepName(e.target.value)} required
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none text-white" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-white/90 mb-1">Chức vụ</label>
-                    <input type="text" value={repPosition} onChange={(e) => setRepPosition(e.target.value)} required
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none text-white" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-white/90 mb-1">Số điện thoại</label>
-                    <input type="tel" value={repPhone} onChange={(e) => setRepPhone(e.target.value)} required
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none text-white" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-white/90 mb-1">Email làm việc</label>
-                    <input type="email" value={repEmail} onChange={(e) => setRepEmail(e.target.value)} required
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none text-white" />
-                  </div>
+                  <Input
+                    label="Họ tên"
+                    variant="glass"
+                    value={regBizData.repName}
+                    onChange={(e) => regBizData.setRepName(e.target.value)}
+                    required
+                  />
+                  <Input
+                    label="Chức vụ"
+                    variant="glass"
+                    value={regBizData.repPosition}
+                    onChange={(e) => regBizData.setRepPosition(e.target.value)}
+                    required
+                  />
+                  <Input
+                    label="Số điện thoại"
+                    type="tel"
+                    variant="glass"
+                    pattern="[0-9]{10,11}"
+                    title="Số điện thoại phải gồm 10 đến 11 chữ số"
+                    value={regBizData.repPhone}
+                    onChange={(e) => regBizData.setRepPhone(e.target.value)}
+                    required
+                  />
+                  <Input
+                    label="Email làm việc"
+                    type="email"
+                    variant="glass"
+                    value={regBizData.repEmail}
+                    onChange={(e) => regBizData.setRepEmail(e.target.value)}
+                    required
+                  />
                 </div>
 
                 <h3 className="font-semibold text-white/90 border-b border-white/20 pb-2 pt-2">3. Thiết lập mật khẩu</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-white/90 mb-1">Mật khẩu</label>
-                    <input type="password" value={bizPassword} onChange={(e) => setBizPassword(e.target.value)} required
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none text-white" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-white/90 mb-1">Xác nhận mật khẩu</label>
-                    <input type="password" value={bizConfirm} onChange={(e) => setBizConfirm(e.target.value)} required
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-white/50 focus:outline-none text-white" />
-                  </div>
+                  <Input
+                    label="Mật khẩu"
+                    type="password"
+                    variant="glass"
+                    value={regBizData.bizPassword}
+                    onChange={(e) => regBizData.setBizPassword(e.target.value)}
+                    required
+                  />
+                  <Input
+                    label="Xác nhận mật khẩu"
+                    type="password"
+                    variant="glass"
+                    value={regBizData.bizConfirm}
+                    onChange={(e) => regBizData.setBizConfirm(e.target.value)}
+                    required
+                  />
                 </div>
 
-                <button type="submit"
-                  className="w-full py-3 mt-4 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition duration-200 shadow-lg"
+                <Button 
+                  type="submit" 
+                  isLoading={isSubmitting}
+                  className="w-full mt-4 !bg-teal-500 hover:!bg-teal-600 !text-white"
                 >
                   Gửi Yêu Cầu Hợp Tác
-                </button>
+                </Button>
               </form>
             </div>
 

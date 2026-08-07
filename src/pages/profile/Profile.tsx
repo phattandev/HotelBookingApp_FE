@@ -226,7 +226,7 @@ const Profile: React.FC = () => {
                 <h3 className="text-lg font-bold text-slate-900 mb-2">Trang Quản lý Cơ sở (Hotel Manager Panel)</h3>
                 <p className="text-slate-600 text-sm mb-3">Bạn được cấp quyền quản lý vận hành trực tiếp khách sạn được chỉ định.</p>
                 <div className="p-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-500 shadow-sm">
-                  ⚡ Chức năng sắp triển khai: Quản lý loại phòng (`RoomTypes`), cấu hình Tiện nghi cụ thể và tiếp nhận đơn đặt phòng (`Bookings`).
+                  ⚡ Chức năng sắp triển khai: Quản lý loại phòng (`RoomTypes`), cấu hình Tiện nghi cụ thể và tiếp nhận lịch sử đặt phòng (`Bookings`).
                 </div>
               </div>
             )}

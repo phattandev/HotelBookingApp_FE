@@ -1,40 +1,41 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import api from '../../services/api';
+import React from 'react';
 import AmenityPickerList from '../../components/AmenityPickerList';
-import { useConfirm } from '../../components/ConfirmModal';
-import toast from 'react-hot-toast';
+import { Button } from '../../components/ui/Button';
+import { Textarea } from '../../components/ui/Textarea';
+import { useHotelInfo } from '../../hooks/useHotelInfo';
+import type { HotelImage } from '../../hooks/useHotelInfo';
 
-// ---- Types ----
-interface HotelImage { id: string; url: string; publicId: string; isPrimary: boolean; displayOrder: number; }
-interface AmenityItem { id: string; name: string; categoryName: string; applicableTo: string; }
-interface HotelDetail {
-  id: string; name: string; addressLine: string; description: string | null; starRating: number | null;
-  approvalStatus: string; isActive: boolean; images: HotelImage[]; amenities: AmenityItem[];
-}
 
-const HotelImagesSection = React.memo(({ 
-  images, 
-  uploading, 
-  onUpload, 
-  onDelete, 
-  fileInputRef 
-}: { 
-  images: HotelImage[]; 
-  uploading: boolean; 
-  onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void; 
-  onDelete: (id: string) => void; 
+// Sub-component tách riêng (memoized để không re-render không cần thiết)
+const HotelImagesSection = React.memo(({
+  images,
+  uploading,
+  onUpload,
+  onDelete,
+  fileInputRef,
+  disabled
+}: {
+  images: HotelImage[];
+  uploading: boolean;
+  onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onDelete: (id: string) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
+  disabled: boolean;
 }) => {
   return (
     <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
       <div className="flex justify-between items-center mb-5">
         <h2 className="text-lg font-bold text-slate-900">Hình Ảnh</h2>
         <div>
-          <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" id="hotel-img-upload" onChange={onUpload} />
-          <label htmlFor="hotel-img-upload"
-            className={`cursor-pointer inline-block px-3 py-1.5 rounded-lg text-xs font-semibold transition text-white ${uploading ? 'bg-slate-400' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
+          <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" id="hotel-img-upload" onChange={onUpload} disabled={disabled} />
+          <Button
+            variant="primary"
+            onClick={() => document.getElementById('hotel-img-upload')?.click()}
+            isLoading={uploading}
+            disabled={disabled}
+          >
             {uploading ? 'Đang tải...' : 'Upload ảnh'}
-          </label>
+          </Button>
         </div>
       </div>
 
@@ -53,12 +54,13 @@ const HotelImagesSection = React.memo(({
                   Ảnh bìa
                 </span>
               )}
-              <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                <button onClick={() => onDelete(img.id)}
-                  className="text-white text-xs font-semibold bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg shadow-sm transition">
-                  Xóa
-                </button>
-              </div>
+              {!disabled && (
+                <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                  <Button variant="danger" size="sm" onClick={() => onDelete(img.id)}>
+                    Xóa
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -68,109 +70,25 @@ const HotelImagesSection = React.memo(({
 });
 
 const HotelInfo: React.FC = () => {
-  const confirm = useConfirm();
-  const [hotel, setHotel] = useState<HotelDetail | null>(null);
-  const [allAmenities, setAllAmenities] = useState<AmenityItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  // Form state
-  const [description, setDescription] = useState('');
-  const [starRating, setStarRating] = useState<number | null>(null);
-  const [selectedAmenityIds, setSelectedAmenityIds] = useState<string[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [hotelRes, amenitiesRes] = await Promise.all([
-        api.get('/manager/hotel'),
-        api.get('/manager/hotel/amenities/catalog?type=hotel'), // the backend handles "applicableTo = hotel or both"
-      ]);
-      const h: HotelDetail = hotelRes.data.data;
-      setHotel(h);
-      setDescription(h.description || '');
-      setStarRating(h.starRating);
-      setSelectedAmenityIds(h.amenities.map((a) => a.id));
-      const fetchedAmenities: AmenityItem[] = amenitiesRes.data.data || [];
-      // Yêu cầu: chỉ lấy tiện nghi chuyên dành cho khách sạn (không lấy 'room' hay 'both' nếu không cần thiết)
-      setAllAmenities(fetchedAmenities.filter(a => a.applicableTo === 'hotel'));
-    } catch (e) {
-      setMsg({ type: 'error', text: 'Không thể tải thông tin khách sạn.' });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-
-  const handleSaveAll = async () => {
-    setSaving(true);
-    setMsg(null);
-    try {
-      await Promise.all([
-        api.put('/manager/hotel/info', { description, starRating }),
-        api.put('/manager/hotel/amenities', { amenityIds: selectedAmenityIds })
-      ]);
-      setMsg({ type: 'success', text: 'Đã lưu toàn bộ thông tin khách sạn thành công!' });
-      fetchData();
-    } catch {
-      setMsg({ type: 'error', text: 'Lỗi khi lưu thông tin. Vui lòng thử lại.' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleUploadImage = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    setUploading(true);
-    try {
-      for (const file of files) {
-        const formData = new FormData();
-        formData.append('file', file);
-        await api.post('/manager/images/hotel', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-      }
-      toast.success(`Upload ${files.length > 1 ? files.length + ' ảnh' : '1 ảnh'} thành công!`);
-      fetchData();
-    } catch {
-      toast.error('Upload ảnh thất bại.');
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  }, [fetchData]);
-
-  const handleDeleteImage = useCallback(async (imageId: string) => {
-    const ok = await confirm({
-      title: 'Xóa ảnh',
-      message: 'Bạn có chắc muốn xóa ảnh này?',
-      confirmText: 'Xóa',
-      variant: 'danger',
-    });
-    if (!ok) return;
-    try {
-      await api.delete(`/manager/images/hotel/${imageId}`);
-      toast.success('Đã xóa ảnh.');
-      fetchData();
-    } catch {
-      toast.error('Xóa ảnh thất bại.');
-    }
-  }, [confirm, fetchData]);
-
-  const toggleAmenity = useCallback((id: string) => {
-    setSelectedAmenityIds((prev) => {
-      const nextIds = new Set(prev);
-      nextIds.has(id) ? nextIds.delete(id) : nextIds.add(id);
-      return Array.from(nextIds);
-    });
-  }, []);
-
-
+  const {
+    hotel,
+    allAmenities,
+    loading,
+    saving,
+    uploading,
+    msg,
+    setMsg,
+    description,
+    setDescription,
+    starRating,
+    setStarRating,
+    selectedAmenityIds,
+    fileInputRef,
+    handleSaveAll,
+    handleUploadImage,
+    handleDeleteImage,
+    toggleAmenity,
+  } = useHotelInfo();
 
   if (loading) return <div className="flex items-center justify-center h-64 text-slate-400 text-sm">Đang tải dữ liệu...</div>;
   if (!hotel) return (
@@ -183,22 +101,32 @@ const HotelInfo: React.FC = () => {
     </div>
   );
 
+  const isPending = hotel.approvalStatus === 'Pending';
+  const canEdit = !isPending;
+
   return (
     <div className="w-full flex flex-col gap-6">
-
-      {/* Header + Alert - phần cố định trên cùng */}
+      {/* Header + Alert */}
       <div className="shrink-0">
         <div className="mb-4 flex justify-between items-start">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">{hotel.name}</h1>
-            <p className="text-sm text-slate-500 mt-1">{hotel.addressLine}</p>
             <div className="flex gap-2 mt-2">
               <span className={`px-2 py-0.5 text-xs font-bold rounded-md ${hotel.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
                 {hotel.isActive ? 'Đang hoạt động' : 'Tạm ngưng'}
               </span>
+              <span className={`px-2 py-0.5 text-xs font-bold rounded-md ${hotel.approvalStatus === 'Pending' ? 'bg-amber-100 text-amber-700' : hotel.approvalStatus === 'Draft' ? 'bg-slate-200 text-slate-700' : hotel.approvalStatus === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                {hotel.approvalStatus}
+              </span>
             </div>
           </div>
         </div>
+
+        {isPending && (
+          <div className="mb-4 p-4 rounded-xl text-sm bg-amber-50 text-amber-700 border border-amber-100">
+            <span className="font-medium">Khách sạn đang chờ duyệt. Bạn không thể chỉnh sửa thông tin lúc này.</span>
+          </div>
+        )}
 
         {msg && (
           <div className={`mb-4 p-4 rounded-xl text-sm flex justify-between items-center ${msg.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
@@ -210,19 +138,17 @@ const HotelInfo: React.FC = () => {
 
       {/* Nội dung chính */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-
-        {/* Cột trái: Mô tả + Tiện nghi */}
+        {/* Cột trái: Basic Info + Mô tả + Tiện nghi */}
         <div className="xl:col-span-2 flex flex-col gap-6">
-
-          {/* Section: Thông tin căn bản */}
+          {/* Section: Thông tin mô tả chi tiết */}
           <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <h2 className="text-lg font-bold text-slate-900 mb-5">Thông Tin Căn Bản</h2>
+            <h2 className="text-lg font-bold text-slate-900 mb-5">Chi Tiết Giới Thiệu</h2>
             <div className="space-y-5">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Hạng sao Khách sạn</label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((s) => (
-                    <button key={s} onClick={() => setStarRating(starRating === s ? null : s)}
+                    <button key={s} onClick={() => canEdit && setStarRating(starRating === s ? null : s)} disabled={!canEdit}
                       className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${starRating === s ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20' : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-600'}`}>
                       {s} Sao
                     </button>
@@ -230,13 +156,13 @@ const HotelInfo: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Mô tả tổng quan</label>
-                <textarea
+                <Textarea
+                  label="Mô tả tổng quan"
                   rows={6}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Giới thiệu về khách sạn, vị trí, phong cách, dịch vụ nổi bật..."
-                  className="w-full border border-slate-200 px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none transition"
+                  disabled={!canEdit}
                 />
                 <p className="text-xs text-slate-400 mt-1.5 text-right">{description.length}/5000 ký tự</p>
               </div>
@@ -249,7 +175,7 @@ const HotelInfo: React.FC = () => {
             <AmenityPickerList
               allAmenities={allAmenities}
               selectedIds={selectedAmenityIds}
-              onToggle={toggleAmenity}
+              onToggle={canEdit ? toggleAmenity : () => {}}
               maxHeight="none"
             />
           </section>
@@ -257,24 +183,30 @@ const HotelInfo: React.FC = () => {
 
         {/* Cột phải: Ảnh + Nút lưu */}
         <div className="xl:col-span-1 flex flex-col gap-6 sticky top-24">
-          {/* Section: Ảnh */}
-          <HotelImagesSection 
-            images={hotel.images} 
-            uploading={uploading} 
-            onUpload={handleUploadImage} 
-            onDelete={handleDeleteImage} 
-            fileInputRef={fileInputRef} 
+          <HotelImagesSection
+            images={hotel.images}
+            uploading={uploading}
+            onUpload={handleUploadImage}
+            onDelete={handleDeleteImage}
+            fileInputRef={fileInputRef}
+            disabled={!canEdit}
           />
 
           {/* Action Panel */}
-          <section className="bg-slate-50 rounded-xl p-6 border border-slate-200 flex flex-col gap-3 xl:sticky xl:top-0">
-            <h3 className="text-sm font-bold text-slate-800">Cập nhật thay đổi</h3>
-            <p className="text-xs text-slate-500 leading-relaxed mb-1">Hãy chắc chắn bạn đã kiểm tra kỹ các thông tin trước khi lưu.</p>
-            <button onClick={handleSaveAll} disabled={saving}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition shadow-sm shadow-emerald-600/20">
-              {saving ? 'Đang lưu hệ thống...' : 'Lưu tất cả thay đổi'}
-            </button>
-          </section>
+          {canEdit && (
+            <section className="bg-slate-50 rounded-xl p-6 border border-slate-200 flex flex-col gap-3 xl:sticky xl:top-0">
+              <h3 className="text-sm font-bold text-slate-800">Lưu Thông Tin</h3>
+              <p className="text-xs text-slate-500 leading-relaxed mb-1">Lưu các thay đổi về mô tả, hạng sao và tiện nghi của khách sạn.</p>
+              <Button
+                variant="primary"
+                onClick={handleSaveAll}
+                isLoading={saving}
+                className="w-full"
+              >
+                {saving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+              </Button>
+            </section>
+          )}
         </div>
       </div>
     </div>

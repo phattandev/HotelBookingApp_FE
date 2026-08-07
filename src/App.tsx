@@ -25,7 +25,8 @@ import MyBookingsPage from './pages/customer/MyBookingsPage';
 // Public hotel pages
 import HotelSearchPage from './pages/public/HotelSearchPage';
 import HotelDetailPage from './pages/public/HotelDetailPage';
-import RoomTypeDetailPage from './pages/public/RoomTypeDetailPage';
+import AboutPage from './pages/public/AboutPage';
+import ContactPage from './pages/public/ContactPage';
 
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -33,6 +34,7 @@ import LocationManagement from './pages/admin/LocationManagement';
 import AmenityManagement from './pages/admin/AmenityManagement';
 import AdminHotelManagement from './pages/admin/AdminHotelManagement';
 import AdminAccountManagement from './pages/admin/AdminAccountManagement';
+import AdminBookingManagement from './pages/admin/AdminBookingManagement';
 import AdminProfile from './pages/admin/AdminProfile';
 
 // Partner
@@ -81,7 +83,8 @@ const App: React.FC = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/hotels" element={<HotelSearchPage />} />
           <Route path="/hotels/:id" element={<HotelDetailPage />} />
-          <Route path="/hotels/:hotelId/room/:roomId" element={<RoomTypeDetailPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           <Route element={<ProtectedRoute allowedRoles={['customer']} />}>
             <Route path="/profile" element={<CustomerProfile />} />
@@ -98,6 +101,7 @@ const App: React.FC = () => {
             <Route path="/admin/hotels" element={<AdminHotelManagement />} />
             <Route path="/admin/amenities" element={<AmenityManagement />} />
             <Route path="/admin/accounts" element={<AdminAccountManagement />} />
+            <Route path="/admin/bookings" element={<AdminBookingManagement />} />
             <Route path="/admin/profile" element={<AdminProfile />} />
           </Route>
         </Route>

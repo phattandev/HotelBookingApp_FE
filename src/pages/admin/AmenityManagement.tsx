@@ -2,6 +2,13 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../components/ConfirmModal';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
+import { Pagination } from '../../components/ui/Pagination';
+import { SidePanel } from '../../components/ui/SidePanel';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 
 // Định nghĩa kiểu dữ liệu cho Danh mục tiện nghi (Category)
 interface Category { id: string; name: string; applicableTo: string; }
@@ -216,28 +223,16 @@ const AmenityManagement: React.FC = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Danh mục tiện nghi</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Quản lý các tiện nghi chuẩn — đối tác chọn khi cấu hình khách sạn và phòng
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => openModal('addCat')}
-            className="px-3.5 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition"
-          >
-            + Danh mục
-          </button>
-          <button
-            onClick={() => openModal('addAmenity')}
-            className="px-3.5 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition"
-          >
-            + Tiện nghi
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Danh mục tiện nghi"
+        description="Quản lý các tiện nghi chuẩn — đối tác chọn khi cấu hình khách sạn và phòng"
+        action={
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => openModal('addCat')}>+ Danh mục</Button>
+            <Button variant="primary" onClick={() => openModal('addAmenity')}>+ Tiện nghi</Button>
+          </div>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-5">
@@ -314,13 +309,13 @@ const AmenityManagement: React.FC = () => {
               {activeCat === 'all' ? 'Tất cả tiện nghi' : categories.find(c => c.id === activeCat)?.name}
               <span className="ml-2 text-slate-400 font-normal normal-case">({visibleAmenities.length})</span>
             </span>
-            <input 
-              type="text" 
-              placeholder="Tìm theo tên tiện nghi..." 
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 min-w-[200px]" 
-            />
+            <div className="w-64">
+              <Input
+                placeholder="Tìm theo tên tiện nghi..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
 
           {visibleAmenities.length === 0 ? (
@@ -347,38 +342,26 @@ const AmenityManagement: React.FC = () => {
                     <tr key={a.id} className={`hover:bg-slate-50 transition text-center ${!a.isActive ? 'opacity-50' : ''}`}>
                       <td className="px-5 py-3 font-medium text-slate-900">{a.name}</td>
                       <td className="px-5 py-3">
-                        <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">
-                          {a.categoryName}
-                        </span>
+                        <Badge variant="neutral">{a.categoryName}</Badge>
                       </td>
                       <td className="px-5 py-3">
-                        <span className="inline-block px-2 py-0.5 bg-violet-50 text-violet-700 text-xs rounded-md font-medium">
+                        <Badge variant="violet">
                           {applicableLabel[categories.find(c => c.id === a.categoryId)?.applicableTo ?? 'both'] ?? 'Cả hai'}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-5 py-3">
-                        <span className={`inline-block px-2 py-0.5 text-xs rounded-full font-semibold ${a.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
-                          }`}>
+                        <Badge variant={a.isActive ? 'success' : 'neutral'}>
                           {a.isActive ? 'Hoạt động' : 'Tạm tắt'}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => openModal('editAmenity', a)}
-                            className="text-xs px-2.5 py-1.5 text-slate-600 bg-slate-100 hover:bg-violet-50 hover:text-violet-600 rounded-md transition"
-                          >
+                          <Button size="sm" variant="secondary" onClick={() => openModal('editAmenity', a)}>
                             Sửa
-                          </button>
-                          <button
-                            onClick={() => handleToggle(a)}
-                            className={`text-xs px-2.5 py-1.5 rounded-md transition ${a.isActive
-                              ? 'text-amber-600 bg-amber-50 hover:bg-amber-100'
-                              : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
-                              }`}
-                          >
+                          </Button>
+                          <Button size="sm" variant={a.isActive ? 'danger' : 'primary'} onClick={() => handleToggle(a)}>
                             {a.isActive ? 'Tắt' : 'Bật'}
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -386,105 +369,71 @@ const AmenityManagement: React.FC = () => {
                 </tbody>
               </table>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between mt-auto bg-slate-50">
-                  <span className="text-xs text-slate-500">
-                    Trang {currentPage} / {totalPages}
-                  </span>
-                  <div className="flex gap-1">
-                    <button
-                      disabled={currentPage === 1}
-                      onClick={() => setCurrentPage(prev => prev - 1)}
-                      className="px-3 py-1 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded-md disabled:opacity-50 transition"
-                    >
-                      Trước
-                    </button>
-                    <button
-                      disabled={currentPage === totalPages}
-                      onClick={() => setCurrentPage(prev => prev + 1)}
-                      className="px-3 py-1 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded-md disabled:opacity-50 transition"
-                    >
-                      Sau
-                    </button>
-                  </div>
-                </div>
-              )}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </>
           )}
         </div>
       </div>
 
-      {/* Modal */}
-      {modal !== 'none' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h2 className="font-bold text-slate-900">
-                {modal === 'addCat' ? 'Thêm danh mục' : modal === 'editCat' ? 'Sửa danh mục' : modal === 'addAmenity' ? 'Thêm tiện nghi' : 'Sửa tiện nghi'}
-              </h2>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 transition text-xl">
-                &times;
-              </button>
-            </div>
-            <div className="px-6 py-5 space-y-4">
-              {(modal === 'addAmenity' || modal === 'editAmenity') && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Danh mục</label>
-                  <select
-                    value={formCatId} onChange={e => setFormCatId(e.target.value)}
-                    className="w-full border border-slate-200 px-3 py-2.5 rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
+      <SidePanel
+        isOpen={modal !== 'none'}
+        onClose={closeModal}
+        title={modal === 'addCat' ? 'Thêm danh mục' : modal === 'editCat' ? 'Sửa danh mục' : modal === 'addAmenity' ? 'Thêm tiện nghi' : 'Sửa tiện nghi'}
+        footer={
+          <>
+            <Button variant="secondary" onClick={closeModal} disabled={submitting}>Hủy</Button>
+            <Button variant="primary" onClick={handleSubmit} isLoading={submitting}>
+              {modal.startsWith('add') ? 'Thêm mới' : 'Lưu thay đổi'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {(modal === 'addAmenity' || modal === 'editAmenity') && (
+            <Select
+              label="Danh mục"
+              value={formCatId}
+              onChange={val => setFormCatId(val)}
+              options={[{ value: '', label: '— Chọn danh mục —' }, ...categories.map(c => ({ value: c.id, label: c.name }))]}
+            />
+          )}
+
+          <Input
+            label={modal.includes('Cat') ? 'Tên danh mục' : 'Tên tiện nghi'}
+            value={formName}
+            onChange={e => setFormName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+            placeholder={modal.includes('Cat') ? 'Ví dụ: Phòng tắm, Khu vực ăn...' : 'Ví dụ: Wifi miễn phí, Bể bơi...'}
+            autoFocus
+          />
+
+          {(modal === 'addCat' || modal === 'editCat') && (
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Áp dụng cho</label>
+              <div className="flex gap-2">
+                {APPLICABLE_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setFormApplicable(opt.value)}
+                    className={`flex-1 py-2 rounded-lg text-xs font-medium border transition ${formApplicable === opt.value
+                      ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
+                      : 'border-slate-200 text-slate-600 hover:border-violet-300 hover:text-violet-600'
+                      }`}
                   >
-                    <option value="">— Chọn danh mục —</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-              )}
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1.5">
-                  {modal.includes('Cat') ? 'Tên danh mục' : 'Tên tiện nghi'}
-                </label>
-                <input
-                  type="text" value={formName} onChange={e => setFormName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                  placeholder={modal.includes('Cat') ? 'Ví dụ: Phòng tắm, Khu vực ăn...' : 'Ví dụ: Wifi miễn phí, Bể bơi...'}
-                  className="w-full border border-slate-200 px-3 py-2.5 rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
-                  autoFocus
-                />
+                    {opt.label}
+                  </button>
+                ))}
               </div>
-              {(modal === 'addCat' || modal === 'editCat') && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Áp dụng cho</label>
-                  <div className="flex gap-2">
-                    {APPLICABLE_OPTIONS.map(opt => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setFormApplicable(opt.value)}
-                        className={`flex-1 py-2 rounded-lg text-xs font-medium border transition ${formApplicable === opt.value
-                          ? 'bg-violet-600 text-white border-violet-600'
-                          : 'border-slate-200 text-slate-600 hover:border-violet-300'
-                          }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {error && <p className="text-red-500 text-sm">{error}</p>}
             </div>
-            <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100">
-              <button onClick={closeModal} disabled={submitting} className="px-4 py-2 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
-                Hủy
-              </button>
-              <button onClick={handleSubmit} disabled={submitting} className="px-5 py-2 text-sm text-white bg-violet-600 rounded-lg hover:bg-violet-700 disabled:opacity-50 transition font-medium">
-                {submitting ? 'Đang lưu...' : (modal.startsWith('add') ? 'Thêm mới' : 'Lưu thay đổi')}
-              </button>
-            </div>
-          </div>
+          )}
+          {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
         </div>
-      )}
+      </SidePanel>
     </div>
   );
 };

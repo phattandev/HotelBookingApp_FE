@@ -2,6 +2,15 @@ import React, { useEffect, useState, useMemo } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { useConfirm, usePrompt } from '../../components/ConfirmModal';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
+import { Button } from '../../components/ui/Button';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { Tabs } from '../../components/ui/Tabs';
+import { Table } from '../../components/ui/Table';
+import { Pagination } from '../../components/ui/Pagination';
+import { SidePanel } from '../../components/ui/SidePanel';
+import { Badge } from '../../components/ui/Badge';
 
 interface HotelItem {
   id: string;
@@ -16,6 +25,14 @@ interface HotelItem {
   rejectionReason?: string;
 }
 
+// ── Helper component hiển thị một dòng label/value trong modal ──
+const Row: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="flex justify-between gap-4 text-sm">
+    <span className="text-slate-500 shrink-0">{label}</span>
+    <span className="text-slate-800 font-medium text-right">{value}</span>
+  </div>
+);
+
 const AdminHotelManagement: React.FC = () => {
   const confirm = useConfirm();
   const prompt = usePrompt();
@@ -24,6 +41,21 @@ const AdminHotelManagement: React.FC = () => {
   const [hotels, setHotels] = useState<HotelItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [selectedHotel, setSelectedHotel] = useState<HotelItem | null>(null);
+  const [hotelDetail, setHotelDetail] = useState<any>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  useEffect(() => {
+    if (selectedHotel) {
+      setLoadingDetail(true);
+      api.get(`/admin/hotels/${selectedHotel.id}/detail`)
+        .then(res => setHotelDetail(res.data.data))
+        .catch(() => toast.error('Lỗi khi tải chi tiết khách sạn'))
+        .finally(() => setLoadingDetail(false));
+    } else {
+      setHotelDetail(null);
+    }
+  }, [selectedHotel]);
   
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,6 +135,7 @@ const AdminHotelManagement: React.FC = () => {
     try {
       await api.put(`/hotels/${id}/review`, { action, rejectionReason });
       toast.success(`Đã ${action === 'Approve' ? 'phê duyệt' : 'từ chối'} khách sạn thành công!`);
+      setSelectedHotel(null); // đóng modal sau khi xử lý
       fetchHotels();
     } catch {
       toast.error('Đã xảy ra lỗi. Vui lòng thử lại.');
@@ -133,152 +166,248 @@ const AdminHotelManagement: React.FC = () => {
     }
   };
 
+  const columns = [
+    {
+      key: 'hotel',
+      header: 'Khách sạn',
+      render: (h: HotelItem) => (
+        <div>
+          <p className="font-semibold text-slate-800">{h.name}</p>
+          <p className="text-xs text-slate-500">MST: {h.taxCode}</p>
+        </div>
+      )
+    },
+    {
+      key: 'business',
+      header: 'Doanh nghiệp',
+      render: (h: HotelItem) => (
+        <div>
+          <p className="font-medium text-slate-700">{h.businessName || 'N/A'}</p>
+          <p className="text-xs text-slate-500">{h.representativeName}</p>
+        </div>
+      )
+    },
+    {
+      key: 'address',
+      header: 'Địa chỉ',
+      render: (h: HotelItem) => (
+        <p className="text-slate-600 truncate max-w-[200px]" title={h.addressLine}>{h.addressLine}</p>
+      )
+    },
+    {
+      key: 'status',
+      header: 'Trạng thái',
+      align: 'center' as const,
+      render: (h: HotelItem) => (
+        <div>
+          {h.approvalStatus === 'Pending' && <Badge variant="warning">Chờ duyệt</Badge>}
+          {h.approvalStatus === 'Rejected' && <div title={h.rejectionReason}><Badge variant="danger">Từ chối</Badge></div>}
+          {h.approvalStatus === 'Approved' && (
+            <Badge variant={h.isActive ? 'success' : 'neutral'}>
+              {h.isActive ? 'Hoạt động' : 'Đình chỉ'}
+            </Badge>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Thao tác',
+      align: 'right' as const,
+      render: (h: HotelItem) => (
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="outline" onClick={() => setSelectedHotel(h)}>
+            Chi tiết
+          </Button>
+          {h.approvalStatus === 'Pending' ? (
+            <>
+              <Button size="sm" variant="primary" onClick={() => handleReview(h.id, 'Approve')} isLoading={processing === h.id}>
+                Duyệt
+              </Button>
+              <Button size="sm" variant="danger" onClick={() => handleReview(h.id, 'Reject')} isLoading={processing === h.id}>
+                Từ chối
+              </Button>
+            </>
+          ) : h.approvalStatus === 'Approved' ? (
+            <Button size="sm" variant={h.isActive ? 'danger' : 'primary'} onClick={() => handleToggleActive(h.id, h.isActive, h.name)} isLoading={processing === h.id}>
+              {h.isActive ? 'Đình chỉ' : 'Mở lại'}
+            </Button>
+          ) : null}
+        </div>
+      )
+    }
+  ];
+
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Quản lý Khách sạn</h1>
-          <p className="text-sm text-slate-500 mt-1">Duyệt hồ sơ đăng ký và quản lý trạng thái hoạt động</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Quản lý Khách sạn"
+        description="Duyệt hồ sơ đăng ký và quản lý trạng thái hoạt động"
+      />
 
-      <div className="flex gap-4 mb-4 border-b border-slate-200">
-        <button onClick={() => setActiveTab('pending')} className={`pb-2 px-1 text-sm font-semibold transition-colors ${activeTab === 'pending' ? 'text-violet-600 border-b-2 border-violet-600' : 'text-slate-500 hover:text-slate-800'}`}>
-          Chờ phê duyệt
-        </button>
-        <button onClick={() => setActiveTab('all')} className={`pb-2 px-1 text-sm font-semibold transition-colors ${activeTab === 'all' ? 'text-violet-600 border-b-2 border-violet-600' : 'text-slate-500 hover:text-slate-800'}`}>
-          Tất cả khách sạn
-        </button>
+      <div className="mb-6">
+        <Tabs
+          tabs={[
+            { value: 'pending', label: 'Chờ phê duyệt' },
+            { value: 'all', label: 'Tất cả khách sạn' }
+          ]}
+          activeTab={activeTab}
+          onChange={(val) => setActiveTab(val as 'pending' | 'all')}
+          variant="line"
+        />
       </div>
 
       <div className="flex flex-wrap gap-3 mb-4 p-4 bg-white rounded-xl border border-slate-200">
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs font-medium text-slate-500 mb-1">Tìm kiếm</label>
-          <input 
+          <Input 
+            label="Tìm kiếm"
             type="text" 
             placeholder="Tên khách sạn, MST..." 
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); if(activeTab === 'all') fetchHotels(); }}
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500"
           />
         </div>
         {activeTab === 'all' && (
           <div className="w-48">
-            <label className="block text-xs font-medium text-slate-500 mb-1">Trạng thái duyệt</label>
-            <select 
+            <Select 
+              label="Trạng thái duyệt"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 bg-white"
-            >
-              <option value="">Tất cả</option>
-              <option value="Approved">Đã duyệt</option>
-              <option value="Pending">Chờ duyệt</option>
-              <option value="Rejected">Từ chối</option>
-            </select>
+              onChange={(val) => setStatusFilter(val)}
+              options={[
+                { value: '', label: 'Tất cả' },
+                { value: 'Approved', label: 'Đã duyệt' },
+                { value: 'Pending', label: 'Chờ duyệt' },
+                { value: 'Rejected', label: 'Từ chối' },
+              ]}
+            />
           </div>
         )}
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-slate-500">Đang tải...</div>
-        ) : paginatedHotels.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">Không có khách sạn nào.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3">Khách sạn</th>
-                  <th className="px-4 py-3">Doanh nghiệp</th>
-                  <th className="px-4 py-3">Địa chỉ</th>
-                  <th className="px-4 py-3 text-center">Trạng thái</th>
-                  <th className="px-4 py-3 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {paginatedHotels.map(h => (
-                  <tr key={h.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-slate-800">{h.name}</p>
-                      <p className="text-xs text-slate-500">MST: {h.taxCode}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-slate-700">{h.businessName || 'N/A'}</p>
-                      <p className="text-xs text-slate-500">{h.representativeName}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-slate-600 truncate max-w-[200px]" title={h.addressLine}>{h.addressLine}</p>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {h.approvalStatus === 'Pending' && <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">Chờ duyệt</span>}
-                      {h.approvalStatus === 'Rejected' && <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium" title={h.rejectionReason}>Từ chối</span>}
-                      {h.approvalStatus === 'Approved' && (
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${h.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                          {h.isActive ? 'Hoạt động' : 'Đình chỉ'}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {h.approvalStatus === 'Pending' ? (
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleReview(h.id, 'Approve')}
-                            disabled={processing === h.id}
-                            className="text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded font-medium transition"
-                          >
-                            Duyệt
-                          </button>
-                          <button
-                            onClick={() => handleReview(h.id, 'Reject')}
-                            disabled={processing === h.id}
-                            className="text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded font-medium transition"
-                          >
-                            Từ chối
-                          </button>
+      <Table
+        columns={columns}
+        data={paginatedHotels}
+        keyExtractor={h => h.id}
+        isLoading={loading}
+        emptyMessage="Không có khách sạn nào."
+      />
+      
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
+
+      {/* ── Modal Chi tiết Khách sạn ── */}
+      <SidePanel
+        isOpen={!!selectedHotel}
+        onClose={() => setSelectedHotel(null)}
+        title="Chi tiết đơn đăng ký khách sạn"
+        width="xl"
+      >
+        {selectedHotel && (
+          <div className="space-y-6">
+            {loadingDetail ? (
+              <div className="flex items-center justify-center h-40 text-violet-600 font-medium">Đang tải chi tiết...</div>
+            ) : hotelDetail ? (
+              <>
+                {/* Thông tin khách sạn */}
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Thông tin khách sạn</p>
+                  <div className="bg-slate-50 rounded-xl p-4 space-y-2">
+                    <Row label="Tên khách sạn" value={selectedHotel.name} />
+                    <Row label="Mã số thuế" value={selectedHotel.taxCode} />
+                    <Row label="Địa chỉ" value={`${hotelDetail.addressLine}, ${hotelDetail.wardName}, ${hotelDetail.provinceName}`} />
+                    <Row label="Trạng thái duyệt" value={
+                      selectedHotel.approvalStatus === 'Pending' ? 'Chờ phê duyệt' :
+                      selectedHotel.approvalStatus === 'Approved' ? 'Đã phê duyệt' : 'Bị từ chối'
+                    } />
+                    {selectedHotel.approvalStatus === 'Approved' && (
+                      <Row label="Hoạt động" value={selectedHotel.isActive ? 'Đang hoạt động' : 'Đã đình chỉ'} />
+                    )}
+                    {selectedHotel.rejectionReason && (
+                      <Row label="Lý do từ chối" value={selectedHotel.rejectionReason} />
+                    )}
+                  </div>
+                </div>
+
+                {/* Thông tin doanh nghiệp */}
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Thông tin doanh nghiệp</p>
+                  <div className="bg-slate-50 rounded-xl p-4 space-y-2">
+                    <Row label="Doanh nghiệp" value={selectedHotel.businessName || '—'} />
+                    <Row label="MST Doanh nghiệp" value={selectedHotel.businessTaxCode || '—'} />
+                    <Row label="Người đại diện" value={selectedHotel.representativeName || '—'} />
+                  </div>
+                </div>
+
+                {/* Danh sách loại phòng */}
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Các loại phòng ({hotelDetail.roomTypes?.length || 0})</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {hotelDetail.roomTypes?.map((rt: any, i: number) => (
+                      <div key={i} className="flex gap-3 border border-slate-200 p-2 rounded-lg bg-white">
+                        {rt.images?.length > 0 ? (
+                          <img src={rt.images.find((img: any) => img.isPrimary)?.url || rt.images[0].url}
+                            className="w-16 h-16 object-cover rounded-md" alt="room" />
+                        ) : (
+                          <div className="w-16 h-16 bg-slate-100 rounded-md flex items-center justify-center text-[10px] text-slate-400 text-center p-1 border border-dashed border-slate-300">Không có ảnh</div>
+                        )}
+                        <div className="flex-1">
+                          <p className="font-bold text-sm text-slate-800 leading-tight">{rt.name}</p>
+                          <p className="text-violet-600 text-sm font-bold mt-0.5">{rt.basePrice.toLocaleString('vi-VN')}₫</p>
+                          <p className="text-[10px] text-slate-500 mt-1">
+                            Sức chứa: {rt.maxAdults} NL, {rt.maxChildren} TE • {rt.totalRooms} phòng
+                          </p>
                         </div>
-                      ) : h.approvalStatus === 'Approved' ? (
-                        <button
-                          onClick={() => handleToggleActive(h.id, h.isActive, h.name)}
-                          disabled={processing === h.id}
-                          className={`px-3 py-1.5 rounded font-medium transition ${h.isActive ? 'text-amber-600 bg-amber-50 hover:bg-amber-100' : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'}`}
-                        >
-                          {h.isActive ? 'Đình chỉ' : 'Mở lại'}
-                        </button>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Hành động nhanh nếu đang chờ duyệt */}
+                {selectedHotel.approvalStatus === 'Pending' && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Hành động</p>
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={() => handleReview(selectedHotel.id, 'Approve')}
+                        isLoading={processing === selectedHotel.id}
+                        variant="primary"
+                        className="flex-1"
+                      >
+                        Phê duyệt
+                      </Button>
+                      <Button
+                        onClick={() => handleReview(selectedHotel.id, 'Reject')}
+                        isLoading={processing === selectedHotel.id}
+                        variant="danger"
+                        className="flex-1"
+                      >
+                        Từ chối
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {selectedHotel.approvalStatus === 'Approved' && (
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => handleToggleActive(selectedHotel.id, selectedHotel.isActive, selectedHotel.name)}
+                      isLoading={processing === selectedHotel.id}
+                      variant={selectedHotel.isActive ? 'danger' : 'primary'}
+                      className="flex-1"
+                    >
+                      {selectedHotel.isActive ? 'Đình chỉ khách sạn' : 'Kích hoạt lại'}
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center text-red-500 py-10">Không có dữ liệu chi tiết.</div>
+            )}
           </div>
         )}
-        
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="p-4 border-t border-slate-200 flex items-center justify-between">
-            <span className="text-sm text-slate-500">
-              Trang {currentPage} / {totalPages}
-            </span>
-            <div className="flex gap-1">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 rounded border border-slate-200 text-sm disabled:opacity-50 hover:bg-slate-50"
-              >
-                Trước
-              </button>
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 rounded border border-slate-200 text-sm disabled:opacity-50 hover:bg-slate-50"
-              >
-                Sau
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      </SidePanel>
     </div>
   );
 };

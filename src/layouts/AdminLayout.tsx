@@ -3,10 +3,11 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
-  { to: '/admin', label: 'Tổng quan', exact: true },
+  { to: '/admin', label: 'Thống kê tổng quát', exact: true },
   { to: '/admin/provinces', label: 'Quản lý Địa điểm' },
   { to: '/admin/amenities', label: 'Quản lý Tiện nghi' },
   { to: '/admin/hotels', label: 'Quản lý Khách sạn' },
+  { to: '/admin/bookings', label: 'Quản lý Đặt Phòng' },
   { to: '/admin/accounts', label: 'Quản lý Tài khoản' },
   { to: '/admin/profile', label: 'Quản lý hồ sơ cá nhân' },
 ];
@@ -82,7 +83,7 @@ const AdminLayout: React.FC = () => {
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <span className="text-slate-300">/</span>
             <span className="font-medium text-slate-700">
-              {navItems.find(n => location.pathname.startsWith(n.to))?.label ?? 'Admin Panel'}
+              {navItems.find(n => (n as any).exact ? location.pathname === n.to || location.pathname === n.to + '/' : location.pathname.startsWith(n.to))?.label ?? 'Admin Panel'}
             </span>
           </div>
           <span className="text-[11px] bg-violet-100 text-violet-700 font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide">
