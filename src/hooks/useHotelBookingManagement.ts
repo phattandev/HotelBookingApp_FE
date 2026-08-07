@@ -30,6 +30,27 @@ export interface BookingItem {
   items: BookingRoomItem[];
 }
 
+export interface RoomAvailabilityItemDto {
+  roomTypeId: string;
+  roomTypeName: string;
+  requiredRooms: number;
+  availableRooms: number;
+  isAvailable: boolean;
+  unitPrice: number;
+  subTotal: number;
+}
+
+export interface ExtensionAvailabilityDto {
+  allAvailable: boolean;
+  items: RoomAvailabilityItemDto[];
+  estimatedTotal: number;
+}
+
+export interface ExtensionItemInput {
+  roomTypeId: string;
+  numRooms: number;
+}
+
 export const useHotelBookingManagement = () => {
   const confirm = useConfirm();
   const [bookings, setBookings] = useState<BookingItem[]>([]);
@@ -44,6 +65,9 @@ export const useHotelBookingManagement = () => {
   const [rejectModal, setRejectModal] = useState<{ id: string; guestName: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [processing, setProcessing] = useState(false);
+
+  // Modal gia hạn
+  const [extendModal, setExtendModal] = useState<BookingItem | null>(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -134,6 +158,32 @@ export const useHotelBookingManagement = () => {
     }
   };
 
+  const checkExtensionAvailability = async (bookingId: string, newCheckOutDate: string, items: ExtensionItemInput[]): Promise<ExtensionAvailabilityDto | null> => {
+    try {
+      const res = await api.post(`/manager/bookings/${bookingId}/extension-availability`, { newCheckOutDate, items });
+      return res.data.data;
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Lỗi khi kiểm tra phòng trống.');
+      return null;
+    }
+  };
+
+  const handleExtend = async (bookingId: string, newCheckOutDate: string, items: ExtensionItemInput[]) => {
+    setProcessing(true);
+    try {
+      await api.post(`/manager/bookings/${bookingId}/extend`, { newCheckOutDate, items });
+      toast.success('Gia hạn phòng thành công.');
+      setExtendModal(null);
+      fetchBookings();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Gia hạn thất bại.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   return {
     loading,
     processing,
@@ -154,6 +204,10 @@ export const useHotelBookingManagement = () => {
     
     rejectModal, setRejectModal,
     rejectReason, setRejectReason,
+    
+    extendModal, setExtendModal,
+    checkExtensionAvailability,
+    handleExtend,
     
     handleApprove,
     openRejectModal,

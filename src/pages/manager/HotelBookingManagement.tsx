@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useHotelBookingManagement } from '../../hooks/useHotelBookingManagement';
-import type { BookingItem } from '../../hooks/useHotelBookingManagement';
+import type { BookingItem, ExtensionAvailabilityDto } from '../../hooks/useHotelBookingManagement';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
@@ -50,7 +50,10 @@ const HotelBookingManagement: React.FC = () => {
     rejectReason, setRejectReason,
     handleApprove,
     openRejectModal,
-    handleConfirmReject
+    handleConfirmReject,
+    extendModal, setExtendModal,
+    checkExtensionAvailability,
+    handleExtend
   } = useHotelBookingManagement();
 
   const [detailBooking, setDetailBooking] = useState<BookingItem | null>(null);
@@ -159,19 +162,31 @@ const HotelBookingManagement: React.FC = () => {
       header: 'Thao tác',
       align: 'center' as const,
       render: (b: BookingItem) => {
-        if (b.status === 'Pending') {
-          return (
-            <div className="flex items-center justify-center gap-2">
-              <Button size="sm" variant="primary" onClick={() => handleApprove(b.id)} isLoading={processing}>
-                Duyệt
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const checkIn = new Date(b.checkInDate); checkIn.setHours(0, 0, 0, 0);
+        const checkOut = new Date(b.checkOutDate); checkOut.setHours(0, 0, 0, 0);
+        const canExtend = b.status === 'Confirmed' && b.paymentStatus === 'Paid' && today >= checkIn && today < checkOut;
+
+        return (
+          <div className="flex flex-col items-center justify-center gap-2">
+            {b.status === 'Pending' && (
+              <div className="flex gap-2">
+                <Button size="sm" variant="primary" onClick={() => handleApprove(b.id)} isLoading={processing}>
+                  Duyệt
+                </Button>
+                <Button size="sm" variant="danger" onClick={() => openRejectModal(b.id, b.guestName)} isLoading={processing}>
+                  Từ chối
+                </Button>
+              </div>
+            )}
+            {canExtend && (
+              <Button size="sm" variant="info" onClick={() => setExtendModal(b)} className="w-full">
+                Gia hạn
               </Button>
-              <Button size="sm" variant="danger" onClick={() => openRejectModal(b.id, b.guestName)} isLoading={processing}>
-                Từ chối
-              </Button>
-            </div>
-          );
-        }
-        return null;
+            )}
+          </div>
+        );
       }
     },
     {
@@ -279,6 +294,17 @@ const HotelBookingManagement: React.FC = () => {
           />
         </div>
       </SidePanel>
+
+      {/* Extend Modal */}
+      {extendModal && (
+        <ExtendBookingPanel
+          booking={extendModal}
+          onClose={() => setExtendModal(null)}
+          onExtend={handleExtend}
+          checkAvailability={checkExtensionAvailability}
+          processing={processing}
+        />
+      )}
 
       {/* ── Detail Modal ── */}
       {detailBooking && (
@@ -390,6 +416,226 @@ function ManagerBookingDetailModal({
                 Từ chối
               </Button>
             </div>
+          </div>
+        )}
+      </div>
+    </SidePanel>
+  );
+}
+
+// ── Extend Booking Panel ──
+function ExtendBookingPanel({
+  booking, onClose, onExtend, checkAvailability, processing
+}: {
+  booking: BookingItem;
+  onClose: () => void;
+  onExtend: (id: string, newCheckOutDate: string, items: {roomTypeId: string, numRooms: number}[]) => void;
+  checkAvailability: (id: string, date: string, items: {roomTypeId: string, numRooms: number}[]) => Promise<ExtensionAvailabilityDto | null>;
+  processing: boolean;
+}) {
+  const [newCheckOutDate, setNewCheckOutDate] = useState('');
+  const [availability, setAvailability] = useState<ExtensionAvailabilityDto | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [selectedItems, setSelectedItems] = useState(() => 
+    booking.items.map(i => ({ roomTypeId: i.roomTypeId, numRooms: i.numRooms, max: i.numRooms, roomTypeName: i.roomTypeName }))
+  );
+
+  // Set min date to tomorrow of current checkout
+  let minDateStr = '';
+  let originalCheckOut = new Date();
+  try {
+    originalCheckOut = new Date(booking.checkOutDate);
+    const minDate = new Date(originalCheckOut);
+    minDate.setDate(minDate.getDate() + 1);
+    minDateStr = minDate.toISOString().split('T')[0];
+  } catch (e) {
+    console.error("Date parsing error", e);
+  }
+
+  useEffect(() => {
+    let active = true;
+    const fetchAvailability = async () => {
+      if (!newCheckOutDate) {
+        setAvailability(null);
+        return;
+      }
+      const itemsToExtend = selectedItems.filter(i => i.numRooms > 0).map(i => ({ roomTypeId: i.roomTypeId, numRooms: i.numRooms }));
+      if (itemsToExtend.length === 0) {
+        setAvailability(null);
+        return;
+      }
+      setChecking(true);
+      const res = await checkAvailability(booking.id, newCheckOutDate, itemsToExtend);
+      if (active) {
+        setAvailability(res);
+        setChecking(false);
+      }
+    };
+    fetchAvailability();
+    return () => { active = false; };
+  }, [newCheckOutDate, booking.id, checkAvailability, selectedItems]);
+
+  const handleNumRoomsChange = (roomTypeId: string, delta: number) => {
+    setSelectedItems(prev => prev.map(i => {
+      if (i.roomTypeId === roomTypeId) {
+        const newVal = Math.max(0, Math.min(i.max, i.numRooms + delta));
+        return { ...i, numRooms: newVal };
+      }
+      return i;
+    }));
+  };
+
+  const totalSelectedRooms = selectedItems.reduce((acc, curr) => acc + curr.numRooms, 0);
+
+  return (
+    <SidePanel
+      isOpen={true}
+      onClose={onClose}
+      title={`Gia hạn đặt phòng - ${booking.guestName}`}
+      width="md"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose} disabled={processing || checking}>
+            Hủy
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => {
+              const itemsToExtend = selectedItems.filter(i => i.numRooms > 0).map(i => ({ roomTypeId: i.roomTypeId, numRooms: i.numRooms }));
+              onExtend(booking.id, newCheckOutDate, itemsToExtend);
+            }} 
+            isLoading={processing}
+            disabled={!newCheckOutDate || !availability?.allAvailable || checking || totalSelectedRooms === 0}
+          >
+            Xác nhận gia hạn
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-6">
+        {/* Thông tin đơn cũ */}
+        <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm space-y-3">
+          <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Thông tin khách hàng & Thời gian lưu trú</h4>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-slate-500 text-xs mb-1">Tên khách hàng</p>
+              <p className="font-medium text-slate-900">{booking.guestName}</p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs mb-1">Số điện thoại</p>
+              <p className="font-medium text-slate-900">{booking.guestPhone}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-slate-500 text-xs mb-1">Email</p>
+              <p className="font-medium text-slate-900">{booking.guestEmail}</p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs mb-1">Check-in</p>
+              <p className="font-medium text-slate-900">{new Date(booking.checkInDate).toLocaleDateString('vi-VN')}</p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs mb-1">Check-out (Hiện tại)</p>
+              <p className="font-medium text-slate-900">{originalCheckOut.toLocaleDateString('vi-VN')}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
+          <p className="text-sm text-blue-800">
+            Hệ thống sẽ tạo <strong>một đơn đặt phòng mới</strong> với ngày check-in là ngày check-out hiện tại ({originalCheckOut.toLocaleDateString('vi-VN')}). 
+            Đơn mới sẽ tự động được đánh dấu là <strong>Đã xác nhận &amp; Đã thanh toán cọc</strong>. Khách hàng sẽ thanh toán tiền mặt phần gia hạn tại quầy.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Ngày trả phòng mới <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            min={minDateStr}
+            value={newCheckOutDate}
+            onChange={e => setNewCheckOutDate(e.target.value)}
+            className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-slate-900 outline-none transition-all focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Chọn số lượng phòng muốn gia hạn
+          </label>
+          <div className="space-y-2">
+            {selectedItems.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl">
+                <div>
+                  <p className="font-medium text-sm text-slate-900">{item.roomTypeName}</p>
+                  <p className="text-xs text-slate-500">Tối đa: {item.max} phòng</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button 
+                    className="w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg disabled:opacity-50 transition-colors"
+                    onClick={() => handleNumRoomsChange(item.roomTypeId, -1)}
+                    disabled={item.numRooms <= 0}
+                  >
+                    -
+                  </button>
+                  <span className="w-4 text-center font-bold text-slate-900 text-sm">{item.numRooms}</span>
+                  <button 
+                    className="w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg disabled:opacity-50 transition-colors"
+                    onClick={() => handleNumRoomsChange(item.roomTypeId, 1)}
+                    disabled={item.numRooms >= item.max}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {totalSelectedRooms === 0 && (
+            <p className="text-xs text-red-500 mt-2">Vui lòng chọn ít nhất 1 phòng để gia hạn.</p>
+          )}
+        </div>
+
+        {checking && <p className="text-sm text-slate-500 italic">Đang kiểm tra phòng trống...</p>}
+
+        {!checking && availability && totalSelectedRooms > 0 && (
+          <div className="space-y-3">
+            <h4 className="text-sm font-bold text-slate-900">Chi tiết thanh toán gia hạn</h4>
+            <div className="bg-slate-50 border border-slate-200 rounded-xl divide-y divide-slate-100">
+              {availability?.items?.map((item, idx) => (
+                <div key={idx} className="p-3 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-slate-900 text-sm">{item?.roomTypeName}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Yêu cầu: {item?.requiredRooms} phòng — Trống: {item?.availableRooms} phòng
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    {item?.isAvailable ? (
+                      <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-md">
+                        Đủ phòng
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-md">
+                        Hết phòng
+                      </span>
+                    )}
+                    <p className="text-sm font-bold text-violet-700 mt-1">{item?.subTotal?.toLocaleString('vi-VN')}₫</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex justify-between items-center bg-violet-50 p-4 rounded-xl border border-violet-100 mt-4">
+              <span className="font-bold text-violet-900">Tổng tiền gia hạn:</span>
+              <span className="font-black text-xl text-violet-700">{availability?.estimatedTotal?.toLocaleString('vi-VN')}₫</span>
+            </div>
+
+            {!availability?.allAvailable && (
+              <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
+                Không thể gia hạn do một số loại phòng đã hết trống trong khoảng thời gian này.
+              </p>
+            )}
           </div>
         )}
       </div>
