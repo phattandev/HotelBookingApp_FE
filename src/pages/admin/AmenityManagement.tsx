@@ -48,7 +48,7 @@ const AmenityManagement: React.FC = () => {
 
   // State quản lý trạng thái nút lưu (tránh bấm 2 lần) và thông báo lỗi của Form
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Pagination state: Quản lý phân trang cho danh sách tiện nghi
   const [currentPage, setCurrentPage] = useState(1);
@@ -99,7 +99,7 @@ const AmenityManagement: React.FC = () => {
 
   // Hàm xử lý mở Modal và thiết lập dữ liệu mặc định cho Form dựa vào loại hành động (mode)
   const openModal = (mode: ModalMode, target?: Category | Amenity) => {
-    setError(''); // Xóa lỗi cũ
+    setFieldErrors({}); // Xóa lỗi cũ
     setModal(mode); // Mở modal với chế độ tương ứng
     setEditTarget(target || null);
 
@@ -126,14 +126,24 @@ const AmenityManagement: React.FC = () => {
   };
 
   // Hàm xử lý đóng Modal và xóa sạch thông tin tạm trong form
-  const closeModal = () => { setModal('none'); setEditTarget(null); setError(''); };
+  const closeModal = () => { setModal('none'); setEditTarget(null); setFieldErrors({}); };
 
   // Hàm xử lý khi người dùng nhấn nút Lưu trên Modal
   const handleSubmit = async () => {
-    // Validate cơ bản: Tên không được để trống
-    if (!formName.trim()) { setError('Tên không được để trống.'); return; }
+    setFieldErrors({});
 
-    setSubmitting(true); setError('');
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!formName.trim()) { errors.name = 'Tên không được để trống'; hasError = true; }
+    if (modal.includes('Amenity') && !formCatId) { errors.categoryId = 'Vui lòng chọn danh mục'; hasError = true; }
+
+    if (hasError) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setSubmitting(true);
     try {
       // Tùy theo chế độ (modal) mà gọi API tương ứng (Thêm/Sửa Danh mục/Tiện nghi)
       switch (modal) {
@@ -144,11 +154,9 @@ const AmenityManagement: React.FC = () => {
           await api.put(`/amenity-categories/${(editTarget as Category).id}`, { name: formName, applicableTo: formApplicable });
           break;
         case 'addAmenity': // Gọi API thêm mới tiện nghi
-          if (!formCatId) { setError('Vui lòng chọn danh mục.'); setSubmitting(false); return; }
           await api.post('/amenities', { categoryId: formCatId, name: formName });
           break;
         case 'editAmenity': // Gọi API cập nhật tiện nghi
-          if (!formCatId) { setError('Vui lòng chọn danh mục.'); setSubmitting(false); return; }
           await api.put(`/amenities/${(editTarget as Amenity).id}`, {
             categoryId: formCatId,
             name: formName,
@@ -394,12 +402,15 @@ const AmenityManagement: React.FC = () => {
       >
         <div className="space-y-4">
           {(modal === 'addAmenity' || modal === 'editAmenity') && (
-            <Select
-              label="Danh mục"
-              value={formCatId}
-              onChange={val => setFormCatId(val)}
-              options={[{ value: '', label: '— Chọn danh mục —' }, ...categories.map(c => ({ value: c.id, label: c.name }))]}
-            />
+            <div>
+              <Select
+                label="Danh mục"
+                value={formCatId}
+                onChange={val => setFormCatId(val)}
+                options={[{ value: '', label: '— Chọn danh mục —' }, ...categories.map(c => ({ value: c.id, label: c.name }))]}
+              />
+              {fieldErrors?.categoryId && <span className="text-xs font-medium text-red-500 mt-1 block">{fieldErrors.categoryId}</span>}
+            </div>
           )}
 
           <Input
@@ -409,6 +420,7 @@ const AmenityManagement: React.FC = () => {
             onKeyDown={e => e.key === 'Enter' && handleSubmit()}
             placeholder={modal.includes('Cat') ? 'Ví dụ: Phòng tắm, Khu vực ăn...' : 'Ví dụ: Wifi miễn phí, Bể bơi...'}
             autoFocus
+            error={fieldErrors?.name}
           />
 
           {(modal === 'addCat' || modal === 'editCat') && (
@@ -431,7 +443,6 @@ const AmenityManagement: React.FC = () => {
               </div>
             </div>
           )}
-          {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
         </div>
       </SidePanel>
     </div>

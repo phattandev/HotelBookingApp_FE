@@ -23,6 +23,7 @@ export const useCancellationPolicy = () => {
   const [hours, setHours] = useState<number>(24);
   const [penalty, setPenalty] = useState<number>(100);
   const [isActive, setIsActive] = useState(true);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const fetchPolicy = async () => {
     try {
@@ -47,8 +48,18 @@ export const useCancellationPolicy = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (penalty < 0 || penalty > 100) { toast.error('Tỉ lệ phạt phải từ 0 đến 100%.'); return; }
-    if (hours <= 0) { toast.error('Mốc giờ phải lớn hơn 0.'); return; }
+    setFieldErrors({});
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!policyName.trim()) { errors.policyName = 'Tên chính sách không được để trống'; hasError = true; }
+    if (penalty < 0 || penalty > 100) { errors.penalty = 'Tỉ lệ phạt phải từ 0 đến 100%'; hasError = true; }
+    if (hours <= 0) { errors.hours = 'Mốc giờ phải lớn hơn 0'; hasError = true; }
+
+    if (hasError) {
+      setFieldErrors(errors);
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -75,6 +86,7 @@ export const useCancellationPolicy = () => {
     isEditing,
     setIsEditing,
     formData: { policyName, setPolicyName, hours, setHours, penalty, setPenalty, isActive, setIsActive },
+    fieldErrors,
     handleSubmit,
   };
 };

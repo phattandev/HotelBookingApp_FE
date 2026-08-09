@@ -5,11 +5,13 @@ import toast from 'react-hot-toast';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { toSentenceCase, isValidPhone, isValidName } from '../../utils/formatters';
 
 const CustomerProfile: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
     fullName: '',
@@ -42,10 +44,39 @@ const CustomerProfile: React.FC = () => {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
+
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!form.fullName.trim()) {
+      errors.fullName = 'Họ và tên không được để trống';
+      hasError = true;
+    } else if (form.fullName.trim().length < 2 || form.fullName.trim().length > 100) {
+      errors.fullName = 'Họ và tên phải từ 2 đến 100 ký tự'; hasError = true;
+    } else if (!isValidName(form.fullName.trim())) {
+      errors.fullName = 'Họ và tên không được chứa số hoặc ký tự đặc biệt'; hasError = true;
+    }
+
+    if (form.phone.trim()) {
+      if (!/^[0-9]+$/.test(form.phone.trim())) {
+        errors.phone = 'Số điện thoại chỉ được nhập số'; hasError = true;
+      } else if (!isValidPhone(form.phone.trim())) {
+        errors.phone = 'Số điện thoại phải từ 10-11 số'; hasError = true;
+      }
+    }
+
+    if (hasError) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setSaving(true);
     try {
       await api.put('/profile', {
         ...form,
+        fullName: toSentenceCase(form.fullName.trim()),
+        phone: form.phone.trim(),
         dateOfBirth: form.dateOfBirth || null
       });
       toast.success('Cập nhật hồ sơ thành công!');
@@ -81,15 +112,27 @@ const CustomerProfile: React.FC = () => {
 
         {/* Cột phải: Form cập nhật */}
         <div className="md:w-2/3 p-8">
-          <form onSubmit={handleUpdate} className="space-y-6">
+          <form onSubmit={handleUpdate} noValidate className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               <div className="md:col-span-2">
-                <Input label="Họ và tên" type="text" required value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})} />
+                <Input 
+                  label="Họ và tên" 
+                  type="text" 
+                  value={form.fullName} 
+                  onChange={e => setForm({...form, fullName: e.target.value})} 
+                  error={fieldErrors.fullName}
+                />
               </div>
 
               <div>
-                <Input label="Số điện thoại" type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                <Input 
+                  label="Số điện thoại" 
+                  type="text" 
+                  value={form.phone} 
+                  onChange={e => setForm({...form, phone: e.target.value})} 
+                  error={fieldErrors.phone}
+                />
               </div>
 
               <div>
@@ -103,7 +146,12 @@ const CustomerProfile: React.FC = () => {
               </div>
 
               <div className="md:col-span-2">
-                <Input label="Ngày sinh" type="date" value={form.dateOfBirth} onChange={e => setForm({...form, dateOfBirth: e.target.value})} />
+                <Input 
+                  label="Ngày sinh" 
+                  type="date" 
+                  value={form.dateOfBirth} 
+                  onChange={e => setForm({...form, dateOfBirth: e.target.value})} 
+                />
               </div>
 
             </div>

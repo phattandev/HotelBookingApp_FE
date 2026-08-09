@@ -35,6 +35,7 @@ const LocationManagement: React.FC = () => {
   const [provCode, setProvCode] = useState('');
   const [provName, setProvName] = useState('');
   const [provType, setProvType] = useState('Tỉnh');
+  const [provFieldErrors, setProvFieldErrors] = useState<Record<string, string>>({});
 
   // Ward Modal State
   const [isWardModalOpen, setIsWardModalOpen] = useState(false);
@@ -43,6 +44,7 @@ const LocationManagement: React.FC = () => {
   const [wardName, setWardName] = useState('');
   const [wardType, setWardType] = useState('Xã');
   const [wardProvinceId, setWardProvinceId] = useState('');
+  const [wardFieldErrors, setWardFieldErrors] = useState<Record<string, string>>({});
 
   const [submitting, setSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -109,11 +111,24 @@ const LocationManagement: React.FC = () => {
     } else {
       setEditingProv(null); setProvCode(''); setProvName(''); setProvType('Tỉnh');
     }
+    setProvFieldErrors({});
     setIsProvModalOpen(true);
   };
 
   const handleProvSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setProvFieldErrors({});
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!provCode.trim()) { errors.code = 'Mã vùng không được để trống'; hasError = true; }
+    if (!provName.trim()) { errors.name = 'Tên Tỉnh/Thành không được để trống'; hasError = true; }
+
+    if (hasError) {
+      setProvFieldErrors(errors);
+      return;
+    }
+
     const slug = provName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ /g, '-');
     setSubmitting(true);
     try {
@@ -145,12 +160,25 @@ const LocationManagement: React.FC = () => {
     } else {
       setEditingWard(null); setWardCode(''); setWardName(''); setWardType('Xã'); setWardProvinceId('');
     }
+    setWardFieldErrors({});
     setIsWardModalOpen(true);
   };
 
   const handleWardSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!wardProvinceId) { toast.error('Vui lòng chọn Tỉnh/Thành phố!'); return; }
+    setWardFieldErrors({});
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!wardProvinceId) { errors.provinceId = 'Vui lòng chọn Tỉnh/Thành phố!'; hasError = true; }
+    if (!wardCode.trim()) { errors.code = 'Mã vùng không được để trống'; hasError = true; }
+    if (!wardName.trim()) { errors.name = 'Tên Phường/Xã không được để trống'; hasError = true; }
+
+    if (hasError) {
+      setWardFieldErrors(errors);
+      return;
+    }
+
     const slug = wardName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ /g, '-');
     setSubmitting(true);
     try {
@@ -351,8 +379,8 @@ const LocationManagement: React.FC = () => {
         }
       >
         <div className="space-y-4">
-          <Input required label="Mã vùng" value={provCode} onChange={e => setProvCode(e.target.value)} placeholder="VD: 01, HN" />
-          <Input required label="Tên Tỉnh/Thành" value={provName} onChange={e => setProvName(e.target.value)} placeholder="VD: Hà Nội" />
+          <Input label="Mã vùng" value={provCode} onChange={e => setProvCode(e.target.value)} placeholder="VD: 01, HN" error={provFieldErrors?.code} />
+          <Input label="Tên Tỉnh/Thành" value={provName} onChange={e => setProvName(e.target.value)} placeholder="VD: Hà Nội" error={provFieldErrors?.name} />
           <Select 
             label="Phân loại" 
             value={provType} 
@@ -386,9 +414,10 @@ const LocationManagement: React.FC = () => {
               onChange={(val) => setWardProvinceId(val)}
               placeholder="-- Chọn Tỉnh/Thành --"
             />
+            {wardFieldErrors?.provinceId && <span className="text-xs font-medium text-red-500 mt-1 block">{wardFieldErrors.provinceId}</span>}
           </div>
-          <Input required label="Mã vùng" value={wardCode} onChange={e => setWardCode(e.target.value)} placeholder="VD: 001" />
-          <Input required label="Tên Phường/Xã" value={wardName} onChange={e => setWardName(e.target.value)} placeholder="VD: Phường Ba Đình" />
+          <Input label="Mã vùng" value={wardCode} onChange={e => setWardCode(e.target.value)} placeholder="VD: 001" error={wardFieldErrors?.code} />
+          <Input label="Tên Phường/Xã" value={wardName} onChange={e => setWardName(e.target.value)} placeholder="VD: Phường Ba Đình" error={wardFieldErrors?.name} />
           <Select 
             label="Phân loại" 
             value={wardType} 

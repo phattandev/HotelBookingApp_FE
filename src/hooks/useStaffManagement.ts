@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../components/ConfirmModal';
+import { toSentenceCase, isValidPhone, isValidName } from '../utils/formatters';
 
 export interface Employee {
   id: string;
@@ -95,11 +96,43 @@ export const useStaffManagement = () => {
   useEffect(() => { setCurrentPage(1); }, [searchQuery, roleFilter, hotelFilter]);
 
   // ── Add employee ──
+  const [addFieldErrors, setAddFieldErrors] = useState<Record<string, string>>({});
   const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAddFieldErrors({});
+
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!fullName.trim()) { 
+      errors.fullName = 'Họ và tên không được để trống'; hasError = true; 
+    } else if (fullName.trim().length < 2 || fullName.trim().length > 100) {
+      errors.fullName = 'Họ và tên phải từ 2 đến 100 ký tự'; hasError = true; 
+    } else if (!isValidName(fullName.trim())) {
+      errors.fullName = 'Họ và tên không được chứa số hoặc ký tự đặc biệt'; hasError = true; 
+    }
+
+    if (!email.trim()) { errors.email = 'Email không được để trống'; hasError = true; }
+    
+    if (!phone.trim()) { 
+      errors.phone = 'Số điện thoại không được để trống'; hasError = true; 
+    } else if (!/^[0-9]+$/.test(phone.trim())) {
+      errors.phone = 'Số điện thoại chỉ được nhập số'; hasError = true; 
+    } else if (!isValidPhone(phone.trim())) {
+      errors.phone = 'Số điện thoại phải từ 10-11 số'; hasError = true;
+    }
+    
+    if (!password) { errors.password = 'Mật khẩu không được để trống'; hasError = true; }
+
+    if (hasError) {
+      setAddFieldErrors(errors);
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await api.post('/businessstaff', { email, fullName, phone, password });
+      const formattedName = toSentenceCase(fullName.trim());
+      await api.post('/businessstaff', { email, fullName: formattedName, phone: phone.trim(), password });
       toast.success('Thêm nhân viên thành công! Hãy vào mục "Phân Công" để phân công vị trí.');
       setIsModalOpen(false);
       fetchEmployees();
@@ -116,11 +149,13 @@ export const useStaffManagement = () => {
   };
 
   // ── Open edit modal ──
+  const [editFieldErrors, setEditFieldErrors] = useState<Record<string, string>>({});
   const openEditModal = (emp: Employee) => {
     setEditEmployee(emp);
     setEditFullName(emp.fullName);
     setEditPhone(emp.phone || '');
     setEditNewPassword(''); // luôn reset password field
+    setEditFieldErrors({});
   };
 
   const closeEditModal = () => {
@@ -128,17 +163,47 @@ export const useStaffManagement = () => {
     setEditFullName('');
     setEditPhone('');
     setEditNewPassword('');
+    setEditFieldErrors({});
   };
 
   // ── Submit edit ──
   const handleUpdateEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEditFieldErrors({});
+
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!editFullName.trim()) { 
+      errors.fullName = 'Họ và tên không được để trống'; hasError = true; 
+    } else if (editFullName.trim().length < 2 || editFullName.trim().length > 100) {
+      errors.fullName = 'Họ và tên phải từ 2 đến 100 ký tự'; hasError = true; 
+    } else if (!isValidName(editFullName.trim())) {
+      errors.fullName = 'Họ và tên không được chứa số hoặc ký tự đặc biệt'; hasError = true; 
+    }
+
+    if (!editPhone.trim()) { 
+      errors.phone = 'Số điện thoại không được để trống'; hasError = true; 
+    } else if (!/^[0-9]+$/.test(editPhone.trim())) {
+      errors.phone = 'Số điện thoại chỉ được nhập số'; hasError = true; 
+    } else if (!isValidPhone(editPhone.trim())) {
+      errors.phone = 'Số điện thoại phải từ 10-11 số'; hasError = true;
+    }
+    
+    if (editNewPassword && editNewPassword.length < 6) { errors.newPassword = 'Mật khẩu mới phải có ít nhất 6 ký tự'; hasError = true; }
+
+    if (hasError) {
+      setEditFieldErrors(errors);
+      return;
+    }
+
     if (!editEmployee) return;
     setEditSubmitting(true);
     try {
+      const formattedName = toSentenceCase(editFullName.trim());
       await api.put(`/businessstaff/${editEmployee.id}`, {
-        fullName: editFullName,
-        phone: editPhone,
+        fullName: formattedName,
+        phone: editPhone.trim(),
         newPassword: editNewPassword || null, // null = không đổi mật khẩu
       });
       toast.success('Cập nhật thông tin nhân viên thành công!');
@@ -187,6 +252,12 @@ export const useStaffManagement = () => {
     setHotelFilter('');
   };
 
+  const handleOpenAddModal = () => {
+    setEmail(''); setFullName(''); setPhone(''); setPassword('');
+    setAddFieldErrors({});
+    setIsModalOpen(true);
+  };
+
   return {
     loading,
     uniqueHotels,
@@ -195,9 +266,11 @@ export const useStaffManagement = () => {
     // Add modal
     isModalOpen,
     setIsModalOpen,
+    handleOpenAddModal,
     submitting,
     formData: { email, setEmail, fullName, setFullName, phone, setPhone, password, setPassword },
     handleAddEmployee,
+    addFieldErrors,
     // Edit modal
     editEmployee,
     editFullName, setEditFullName,
@@ -207,6 +280,7 @@ export const useStaffManagement = () => {
     openEditModal,
     closeEditModal,
     handleUpdateEmployee,
+    editFieldErrors,
     // Actions
     handleToggleStatus,
     getSystemRoleLabel,

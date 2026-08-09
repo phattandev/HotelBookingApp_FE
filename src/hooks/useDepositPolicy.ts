@@ -21,6 +21,7 @@ export const useDepositPolicy = () => {
   const [hours, setHours] = useState<number>(24);
   const [percentage, setPercentage] = useState<number>(50);
   const [isActive, setIsActive] = useState(true);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const fetchPolicy = async () => {
     try {
@@ -44,8 +45,23 @@ export const useDepositPolicy = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (percentage < 1 || percentage > 100) { toast.error('Tỉ lệ cọc phải từ 1% đến 100%.'); return; }
-    if (hours <= 0) { toast.error('Số giờ phải lớn hơn 0.'); return; }
+    setFieldErrors({});
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (percentage < 1 || percentage > 100) {
+      errors.percentage = 'Tỉ lệ cọc phải từ 1% đến 100%';
+      hasError = true;
+    }
+    if (hours <= 0) {
+      errors.hours = 'Số giờ phải lớn hơn 0';
+      hasError = true;
+    }
+
+    if (hasError) {
+      setFieldErrors(errors);
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -81,6 +97,7 @@ export const useDepositPolicy = () => {
     isEditing,
     setIsEditing,
     formData: { hours, setHours, percentage, setPercentage, isActive, setIsActive },
+    fieldErrors,
     handleSubmit,
     handleEdit,
   };

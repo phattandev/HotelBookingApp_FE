@@ -16,6 +16,7 @@ const HotelCatalog: React.FC = () => {
     wards,
     isRegisterModalOpen,
     setIsRegisterModalOpen,
+    handleOpenRegisterModal,
     detailModalHotelId,
     setDetailModalHotelId,
     hotelDetail,
@@ -28,7 +29,8 @@ const HotelCatalog: React.FC = () => {
     editingHotelId,
     setEditingHotelId,
     handleUpdateBasicInfo,
-    openEditModal
+    openEditModal,
+    fieldErrors
   } = useHotelCatalog();
 
   return (
@@ -37,7 +39,7 @@ const HotelCatalog: React.FC = () => {
         title="Danh mục Khách sạn"
         description="Quản lý các cơ sở lưu trú thuộc doanh nghiệp"
         action={
-          <Button onClick={() => setIsRegisterModalOpen(true)} variant="primary">
+          <Button onClick={handleOpenRegisterModal} variant="primary">
             + Đăng ký Khách sạn mới
           </Button>
         }
@@ -242,9 +244,9 @@ const HotelCatalog: React.FC = () => {
           </>
         }
       >
-        <form id="register-hotel-form" onSubmit={handleRegister} className="grid grid-cols-1 gap-4">
+        <form id="register-hotel-form" onSubmit={handleRegister} noValidate className="grid grid-cols-1 gap-4">
           <div>
-            <Input label="Tên khách sạn" type="text" required value={formData.name} onChange={e => formData.setName(e.target.value)} placeholder="VD: Khách sạn Mường Thanh..." />
+            <Input label="Tên khách sạn" type="text" value={formData.name} onChange={e => formData.setName(e.target.value)} placeholder="VD: Khách sạn Mường Thanh..." error={fieldErrors?.name} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -255,6 +257,7 @@ const HotelCatalog: React.FC = () => {
                 onChange={(val) => { formData.setProvinceId(val); formData.setWardId(''); }}
                 placeholder="-- Chọn Tỉnh/Thành --"
               />
+              {fieldErrors?.provinceId && <span className="text-xs font-medium text-red-500 mt-1 block">{fieldErrors.provinceId}</span>}
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Quận / Huyện / Phường / Xã</label>
@@ -265,13 +268,14 @@ const HotelCatalog: React.FC = () => {
                 placeholder="-- Chọn Phường/Xã --"
                 disabled={!formData.provinceId}
               />
+              {fieldErrors?.wardId && <span className="text-xs font-medium text-red-500 mt-1 block">{fieldErrors.wardId}</span>}
             </div>
           </div>
           <div>
-            <Input label="Địa chỉ chi tiết" type="text" required value={formData.addressLine} onChange={e => formData.setAddressLine(e.target.value)} placeholder="VD: 123 Đường Nguyễn Văn Linh..." />
+            <Input label="Địa chỉ chi tiết" type="text" value={formData.addressLine} onChange={e => formData.setAddressLine(e.target.value)} placeholder="VD: 123 Đường Nguyễn Văn Linh..." error={fieldErrors?.addressLine} />
           </div>
           <div>
-            <Input label="Mã số thuế" type="text" required value={formData.taxCode} onChange={e => formData.setTaxCode(e.target.value)} placeholder="VD: 0101234567-001" />
+            <Input label="Mã số thuế" type="text" value={formData.taxCode} onChange={e => formData.setTaxCode(e.target.value)} placeholder="VD: 0101234567-001" error={fieldErrors?.taxCode} />
           </div>
         </form>
       </SidePanel>
@@ -289,9 +293,9 @@ const HotelCatalog: React.FC = () => {
           </>
         }
       >
-        <form id="edit-hotel-form" onSubmit={handleUpdateBasicInfo} className="grid grid-cols-1 gap-4">
+        <form id="edit-hotel-form" onSubmit={handleUpdateBasicInfo} noValidate className="grid grid-cols-1 gap-4">
           <div>
-            <Input label="Tên khách sạn" type="text" required value={formData.name} onChange={e => formData.setName(e.target.value)} />
+            <Input label="Tên khách sạn" type="text" value={formData.name} onChange={e => formData.setName(e.target.value)} error={fieldErrors?.name} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -302,6 +306,7 @@ const HotelCatalog: React.FC = () => {
                 onChange={(val) => { formData.setProvinceId(val); formData.setWardId(''); }}
                 placeholder="-- Chọn Tỉnh/Thành --"
               />
+              {fieldErrors?.provinceId && <span className="text-xs font-medium text-red-500 mt-1 block">{fieldErrors.provinceId}</span>}
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Quận / Huyện / Phường / Xã</label>
@@ -312,10 +317,11 @@ const HotelCatalog: React.FC = () => {
                 placeholder="-- Chọn Phường/Xã --"
                 disabled={!formData.provinceId}
               />
+              {fieldErrors?.wardId && <span className="text-xs font-medium text-red-500 mt-1 block">{fieldErrors.wardId}</span>}
             </div>
           </div>
           <div>
-            <Input label="Địa chỉ chi tiết" type="text" required value={formData.addressLine} onChange={e => formData.setAddressLine(e.target.value)} />
+            <Input label="Địa chỉ chi tiết" type="text" value={formData.addressLine} onChange={e => formData.setAddressLine(e.target.value)} error={fieldErrors?.addressLine} />
           </div>
         </form>
       </SidePanel>

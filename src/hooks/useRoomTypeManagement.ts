@@ -48,7 +48,7 @@ export const useRoomTypeManagement = () => {
       setRoomTypes(hotelRes.data.data?.roomTypes || []);
       setAllAmenities(amenitiesRes.data.data || []);
       setIsPending(hotelRes.data.data?.approvalStatus === 'Pending');
-      
+
       setEditingRt(prev => {
         if (!prev) return null;
         const updated = hotelRes.data.data?.roomTypes?.find((r: RoomType) => r.id === prev.id);
@@ -76,10 +76,13 @@ export const useRoomTypeManagement = () => {
     });
   }, [roomTypes, searchQuery, minPrice, maxPrice, minCapacity]);
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
   const handleOpenCreate = () => {
     setEditingRt(null);
     setForm(defaultForm);
     setPendingFiles([]);
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
@@ -89,11 +92,28 @@ export const useRoomTypeManagement = () => {
       name: rt.name, basePrice: rt.basePrice, maxAdults: rt.maxAdults, maxChildren: rt.maxChildren,
       totalRooms: rt.totalRooms, description: rt.description || '', amenityIds: rt.amenities.map(a => a.id),
     });
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
+
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!form.name.trim()) { errors.name = 'Tên loại phòng không được để trống'; hasError = true; }
+    if (form.basePrice < 0 || form.basePrice === null || form.basePrice === undefined || form.basePrice === 0) { errors.basePrice = 'Giá cơ bản không hợp lệ'; hasError = true; }
+    if (!form.totalRooms || form.totalRooms < 1) { errors.totalRooms = 'Tổng số phòng phải lớn hơn 0'; hasError = true; }
+    if (!form.maxAdults || form.maxAdults < 1) { errors.maxAdults = 'Số người lớn tối đa phải lớn hơn 0'; hasError = true; }
+    if (form.maxChildren < 0 || form.maxChildren === null || form.maxChildren === undefined || form.maxChildren === 0) { errors.maxChildren = 'Số trẻ em tối đa không hợp lệ'; hasError = true; }
+
+    if (hasError) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setSaving(true);
     try {
       if (editingRt) {
@@ -243,6 +263,7 @@ export const useRoomTypeManagement = () => {
     handleRestore,
     handleUploadRoomImage,
     handleDeleteRoomImage,
-    toggleFormAmenity
+    toggleFormAmenity,
+    fieldErrors
   };
 };
