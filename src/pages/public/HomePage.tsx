@@ -2,6 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
+import { Button } from '../../components/ui/Button';
+import OccupancyDropdown from '../../components/OccupancyDropdown';
+import { DatePicker } from '../../components/ui/DatePicker';
+import { format } from 'date-fns';
+
 // ─── Slide data ────────────────────────────────────────────────────────────────
 const SLIDES = [
   {
@@ -34,38 +39,18 @@ const DESTINATIONS = [
 // ─── USP features ──────────────────────────────────────────────────────────────
 const FEATURES = [
   {
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    ),
     title: 'Đặt phòng an toàn',
     desc: 'Thông tin khách sạn được xác minh và duyệt bởi đội ngũ quản trị.',
   },
   {
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
     title: 'Giá minh bạch',
     desc: 'Không phí ẩn, không bất ngờ — giá hiển thị là giá bạn thanh toán.',
   },
   {
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
     title: 'Đa dạng lựa chọn',
     desc: 'Từ homestay bình dân đến resort 5 sao — phù hợp mọi ngân sách.',
   },
   {
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-      </svg>
-    ),
     title: 'Hỗ trợ nhanh chóng',
     desc: 'Đội ngũ hỗ trợ luôn sẵn sàng giải đáp mọi thắc mắc của bạn.',
   },
@@ -77,25 +62,22 @@ const HomePage: React.FC = () => {
   const [destination, setDestination] = useState('');
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
-  const [guests, setGuests] = useState('2');
+  const [occupancy, setOccupancy] = useState({ rooms: 1, adults: 2, children: 0 });
   const slideInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const navigate = useNavigate();
 
   // Ngày hôm nay theo local time
-  const todayStr = (() => {
-    const d = new Date();
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    return d.toISOString().split('T')[0];
-  })();
+  const todayDate = new Date();
+  todayDate.setMinutes(todayDate.getMinutes() - todayDate.getTimezoneOffset());
 
-  // Ngày tối thiểu cho checkout = ngày checkIn + 1 ngày
-  const minCheckOut = (() => {
-    if (!checkIn) return todayStr;
-    const d = new Date(checkIn);
-    d.setDate(d.getDate() + 1);
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    return d.toISOString().split('T')[0];
-  })();
+  const minCheckOutDate = checkIn ? new Date(new Date(checkIn).getTime() + 86400000) : todayDate;
+
+  const parseDateString = (dateStr: string) => {
+    if (!dateStr) return null;
+    const parts = dateStr.split('-');
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  };
+  const formatDateString = (d: Date | null) => d ? format(d, 'yyyy-MM-dd') : '';
 
   useEffect(() => {
     slideInterval.current = setInterval(() => {
@@ -122,7 +104,9 @@ const HomePage: React.FC = () => {
     if (destination) params.set('q', destination);
     if (checkIn) params.set('checkIn', checkIn);
     if (checkOut) params.set('checkOut', checkOut);
-    if (guests) params.set('guests', guests);
+    if (occupancy.rooms > 0) params.set('rooms', occupancy.rooms.toString());
+    if (occupancy.adults > 0) params.set('adults', occupancy.adults.toString());
+    if (occupancy.children > 0) params.set('children', occupancy.children.toString());
     navigate(`/hotels?${params.toString()}`);
   };
 
@@ -158,57 +142,57 @@ const HomePage: React.FC = () => {
           {/* Search form */}
           <form
             onSubmit={handleSearch}
-            className="mt-8 w-full max-w-3xl bg-white rounded-2xl shadow-2xl p-2 flex flex-col sm:flex-row gap-2"
+            className="mt-8 w-full max-w-[1000px] bg-white/20 backdrop-blur-md rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col sm:flex-row gap-2 border border-white/30"
           >
-            <div className="flex-1 flex flex-col px-3 py-1.5 border-b sm:border-b-0 sm:border-r border-slate-100">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm đến</label>
+            <div className="flex-1 bg-white rounded-lg p-2 flex flex-col relative">
+              <label className="text-[10px] font-bold text-slate-500 uppercase px-2">Điểm đến</label>
               <input
                 type="text"
                 value={destination}
                 onChange={e => setDestination(e.target.value)}
                 placeholder="Thành phố, tên khách sạn..."
-                className="text-sm text-slate-800 outline-none placeholder-slate-400 bg-transparent"
+                className="w-full bg-transparent border-none text-slate-900 font-medium px-2 py-1 focus:outline-none placeholder:text-slate-400 placeholder:font-normal"
               />
             </div>
-            <div className="flex flex-col px-3 py-1.5 border-b sm:border-b-0 sm:border-r border-slate-100">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nhận phòng</label>
-              <input
-                type="date"
-                value={checkIn}
-                min={todayStr}
-                onChange={e => {
-                  setCheckIn(e.target.value);
-                  if (checkOut && checkOut <= e.target.value) setCheckOut('');
+            <div className="w-full sm:w-[180px] bg-white rounded-lg p-2 flex flex-col relative">
+              <label className="text-[10px] font-bold text-slate-500 uppercase px-2">Nhận phòng</label>
+              <DatePicker
+                value={parseDateString(checkIn)}
+                minDate={todayDate}
+                onChange={(date: Date | null) => {
+                  const str = formatDateString(date);
+                  setCheckIn(str);
+                  if (checkOut && str && checkOut <= str) setCheckOut('');
                 }}
-                className="text-sm text-slate-800 outline-none bg-transparent"
+                placeholderText="Chọn ngày"
+                className="w-full border-none bg-transparent p-0 text-slate-900 font-medium focus:ring-0 shadow-none px-2 py-1 placeholder:font-normal placeholder:text-slate-400"
               />
             </div>
-            <div className="flex flex-col px-3 py-1.5 border-b sm:border-b-0 sm:border-r border-slate-100">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Trả phòng</label>
-              <input
-                type="date"
-                value={checkOut}
-                min={minCheckOut}
-                onChange={e => setCheckOut(e.target.value)}
-                className="text-sm text-slate-800 outline-none bg-transparent"
+            <div className="w-full sm:w-[180px] bg-white rounded-lg p-2 flex flex-col relative">
+              <label className="text-[10px] font-bold text-slate-500 uppercase px-2">Trả phòng</label>
+              <DatePicker
+                value={parseDateString(checkOut)}
+                minDate={minCheckOutDate}
+                onChange={(date: Date | null) => setCheckOut(formatDateString(date))}
+                placeholderText="Chọn ngày"
+                className="w-full border-none bg-transparent p-0 text-slate-900 font-medium focus:ring-0 shadow-none px-2 py-1 placeholder:font-normal placeholder:text-slate-400"
               />
             </div>
-            <div className="flex flex-col px-3 py-1.5 border-b sm:border-b-0 sm:border-r border-slate-100">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Số khách</label>
-              <select
-                value={guests}
-                onChange={e => setGuests(e.target.value)}
-                className="text-sm text-slate-800 outline-none bg-transparent"
+            <div className="w-full sm:w-[240px] bg-white rounded-lg flex items-center relative p-1">
+              <OccupancyDropdown
+                value={occupancy}
+                onChange={setOccupancy}
+                className="w-full"
+              />
+            </div>
+            <div className="flex items-stretch shrink-0">
+              <Button
+                type="submit"
+                className="w-full sm:w-auto px-8 font-bold text-base h-full bg-indigo-600 hover:bg-indigo-700"
               >
-                {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n} khách</option>)}
-              </select>
+                Tìm kiếm
+              </Button>
             </div>
-            <button
-              type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl transition text-sm shrink-0"
-            >
-              Tìm kiếm
-            </button>
           </form>
         </div>
 
@@ -269,9 +253,6 @@ const HomePage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {FEATURES.map((f, i) => (
               <div key={i} className="bg-white rounded-2xl p-6 border border-slate-100">
-                <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
-                  {f.icon}
-                </div>
                 <h3 className="font-semibold text-slate-900 mb-1.5">{f.title}</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
               </div>

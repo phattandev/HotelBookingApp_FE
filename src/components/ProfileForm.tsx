@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { Input } from './ui/Input';
+import { Select } from './ui/Select';
+import { Button } from './ui/Button';
 
 interface ProfileFormProps {
   colorScheme?: 'violet' | 'sky' | 'emerald' | 'indigo';
@@ -10,6 +13,8 @@ interface ProfileFormProps {
 const ProfileForm: React.FC<ProfileFormProps> = ({ colorScheme = 'indigo' }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Form State
   const [fullName, setFullName] = useState('');
@@ -55,6 +60,29 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ colorScheme = 'indigo' }) => 
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
+
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!fullName) {
+      errors.fullName = 'Họ và tên không được để trống';
+      hasError = true;
+    }
+
+    if (user?.Role.toLowerCase() === 'partner') {
+      if (!bizName) { errors.bizName = 'Tên doanh nghiệp không được để trống'; hasError = true; }
+      if (!bizTax) { errors.bizTax = 'Mã số thuế không được để trống'; hasError = true; }
+      if (!bizAddr) { errors.bizAddr = 'Địa chỉ không được để trống'; hasError = true; }
+      if (!bizPosition) { errors.bizPosition = 'Chức vụ không được để trống'; hasError = true; }
+    }
+
+    if (hasError) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setSubmitting(true);
     try {
       const payload = {
         fullName,
@@ -70,55 +98,38 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ colorScheme = 'indigo' }) => 
       toast.success('Cập nhật hồ sơ thành công!');
     } catch (err: any) {
       toast.error(err.response?.data?.Message || 'Cập nhật thất bại.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   if (loading) return <div className="text-center p-12 text-slate-400">Đang tải dữ liệu hồ sơ...</div>;
 
-  const colorClasses = {
-    violet: 'bg-violet-600 hover:bg-violet-700 ring-violet-500 text-violet-700 bg-violet-50 border-violet-200',
-    sky: 'bg-sky-600 hover:bg-sky-700 ring-sky-500 text-sky-700 bg-sky-50 border-sky-200',
-    emerald: 'bg-emerald-600 hover:bg-emerald-700 ring-emerald-500 text-emerald-700 bg-emerald-50 border-emerald-200',
-    indigo: 'bg-indigo-600 hover:bg-indigo-700 ring-indigo-500 text-indigo-700 bg-indigo-50 border-indigo-200',
-  };
 
-  const currentColors = colorClasses[colorScheme];
-  const btnColor = currentColors.split(' ')[0] + ' ' + currentColors.split(' ')[1];
-  const focusColor = 'focus:ring-2 focus:' + currentColors.split(' ')[2];
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-4xl">
-      <form onSubmit={handleUpdate} className="space-y-6">
+      <form onSubmit={handleUpdate} noValidate className="space-y-6">
         <div>
           <h3 className="text-lg font-bold text-slate-900">Thông tin tài khoản cá nhân</h3>
           <p className="text-sm text-slate-500">Cập nhật thông tin cơ bản liên hệ của bạn</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Email hệ thống</label>
-            <input type="text" value={user?.Email} disabled className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed text-sm" />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Họ và tên</label>
-            <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none transition ${focusColor}`} />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Số điện thoại</label>
-            <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none transition ${focusColor}`} />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Giới tính</label>
-            <select value={gender} onChange={(e) => setGender(e.target.value)} className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none transition ${focusColor}`}>
-              <option value="Nam">Nam</option>
-              <option value="Nữ">Nữ</option>
-              <option value="Khác">Khác</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày sinh</label>
-            <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none transition ${focusColor}`} />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input label="Email hệ thống" type="text" value={user?.Email} disabled />
+          <Input label="Họ và tên" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} error={fieldErrors.fullName} />
+          <Input label="Số điện thoại" type="text" value={phone} onChange={(e) => setPhone(e.target.value)} error={fieldErrors.phone} />
+          <Select 
+            label="Giới tính" 
+            value={gender} 
+            onChange={(val) => setGender(val)} 
+            options={[
+              { value: 'Nam', label: 'Nam' },
+              { value: 'Nữ', label: 'Nữ' },
+              { value: 'Khác', label: 'Khác' }
+            ]}
+          />
+          <Input label="Ngày sinh" type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
         </div>
 
         {/* Thông tin doanh nghiệp (dành riêng cho Partner) */}
@@ -129,37 +140,27 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ colorScheme = 'indigo' }) => 
               <p className="text-sm text-slate-500">Thông tin pháp lý doanh nghiệp bạn đại diện</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Trạng thái xác thực</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Trạng thái xác thực</label>
                 <div className={`px-4 py-3 rounded-xl border text-sm font-bold ${bizStatus === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                   {bizStatus === 'Approved' ? 'Đã kích hoạt' : (bizStatus === 'Pending' ? 'Đang chờ Admin duyệt' : bizStatus)}
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tên doanh nghiệp</label>
-                <input type="text" value={bizName} onChange={(e) => setBizName(e.target.value)} required className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none transition ${focusColor}`} />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã số thuế</label>
-                <input type="text" value={bizTax} onChange={(e) => setBizTax(e.target.value)} required className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none transition ${focusColor}`} />
-              </div>
+              <Input label="Tên doanh nghiệp" type="text" value={bizName} onChange={(e) => setBizName(e.target.value)} error={fieldErrors.bizName} />
+              <Input label="Mã số thuế" type="text" value={bizTax} onChange={(e) => setBizTax(e.target.value)} error={fieldErrors.bizTax} />
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Địa chỉ trụ sở chính</label>
-                <input type="text" value={bizAddr} onChange={(e) => setBizAddr(e.target.value)} required className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none transition ${focusColor}`} />
+                <Input label="Địa chỉ trụ sở chính" type="text" value={bizAddr} onChange={(e) => setBizAddr(e.target.value)} error={fieldErrors.bizAddr} />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Chức vụ đại diện</label>
-                <input type="text" value={bizPosition} onChange={(e) => setBizPosition(e.target.value)} required className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none transition ${focusColor}`} />
-              </div>
+              <Input label="Chức vụ đại diện" type="text" value={bizPosition} onChange={(e) => setBizPosition(e.target.value)} error={fieldErrors.bizPosition} />
             </div>
           </div>
         )}
 
         <div className="pt-4 flex justify-end">
-          <button type="submit" className={`px-6 py-2.5 text-white font-bold rounded-xl text-sm transition shadow-sm ${btnColor}`}>
+          <Button type="submit" isLoading={submitting} className={`!bg-${colorScheme}-600 hover:!bg-${colorScheme}-700 !text-white`}>
             Lưu thay đổi hồ sơ
-          </button>
+          </Button>
         </div>
       </form>
     </div>

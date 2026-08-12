@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { toSentenceCase, isValidPhone, isValidTaxCode, isValidName } from '../../utils/formatters';
 
 const Profile: React.FC = () => {
   const { user } = useAuth();
   const [activeSubTab, setActiveSubTab] = useState<'account' | 'management'>('account');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Form State
   const [fullName, setFullName] = useState('');
@@ -53,17 +55,61 @@ const Profile: React.FC = () => {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
+
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!fullName.trim()) {
+      errors.fullName = 'Họ và tên không được để trống';
+      hasError = true;
+    } else if (fullName.trim().length < 2 || fullName.trim().length > 100) {
+      errors.fullName = 'Họ và tên phải từ 2 đến 100 ký tự'; hasError = true;
+    } else if (!isValidName(fullName.trim())) {
+      errors.fullName = 'Họ và tên không được chứa số hoặc ký tự đặc biệt'; hasError = true;
+    }
+
+    if (phone.trim()) {
+      if (!/^[0-9]+$/.test(phone.trim())) {
+        errors.phone = 'Số điện thoại chỉ được nhập số'; hasError = true;
+      } else if (!isValidPhone(phone.trim())) {
+        errors.phone = 'Số điện thoại phải từ 10-11 số'; hasError = true;
+      }
+    }
+
+    if (user?.Role.toLowerCase() === 'partner') {
+      if (!bizName.trim()) { 
+        errors.bizName = 'Tên doanh nghiệp không được để trống'; hasError = true; 
+      } else if (bizName.trim().length < 2 || bizName.trim().length > 100) {
+        errors.bizName = 'Tên doanh nghiệp phải từ 2 đến 100 ký tự'; hasError = true;
+      }
+      
+      if (!bizTax.trim()) { 
+        errors.bizTax = 'Mã số thuế không được để trống'; hasError = true; 
+      } else if (!isValidTaxCode(bizTax.trim())) {
+        errors.bizTax = 'Mã số thuế phải gồm 10 số hoặc 13 số (VD: 0123456789 hoặc 0123456789-001)'; hasError = true;
+      }
+      
+      if (!bizAddr.trim()) { errors.bizAddr = 'Địa chỉ không được để trống'; hasError = true; }
+      if (!bizPosition.trim()) { errors.bizPosition = 'Chức vụ không được để trống'; hasError = true; }
+    }
+
+    if (hasError) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
-        fullName,
-        phone,
+        fullName: toSentenceCase(fullName.trim()),
+        phone: phone.trim(),
         gender,
         dateOfBirth: dob || null,
-        businessName: user?.Role === 'partner' ? bizName : null,
-        taxCode: user?.Role === 'partner' ? bizTax : null,
-        businessAddress: user?.Role === 'partner' ? bizAddr : null,
-        position: user?.Role === 'partner' ? bizPosition : null,
+        businessName: user?.Role === 'partner' ? toSentenceCase(bizName.trim()) : null,
+        taxCode: user?.Role === 'partner' ? bizTax.trim() : null,
+        businessAddress: user?.Role === 'partner' ? bizAddr.trim() : null,
+        position: user?.Role === 'partner' ? bizPosition.trim() : null,
       };
       await api.put('/profile', payload);
       toast.success('Cập nhật hồ sơ thành công!');
@@ -78,6 +124,7 @@ const Profile: React.FC = () => {
 
   const hasManagementPermission = ['admin', 'partner', 'manager'].includes(user?.Role?.toLowerCase() || '');
   const inputCls = "w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none transition";
+  const errorCls = "w-full px-4 py-2.5 border border-red-500 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:outline-none transition";
 
   return (
     <div className="w-full flex flex-col md:flex-row gap-6">
@@ -95,6 +142,7 @@ const Profile: React.FC = () => {
 
         <div className="space-y-1.5">
           <button 
+            type="button"
             onClick={() => setActiveSubTab('account')}
             className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition ${activeSubTab === 'account' ? 'bg-violet-600 text-white shadow-sm shadow-violet-600/20' : 'text-slate-600 hover:bg-slate-50'}`}
           >
@@ -103,6 +151,7 @@ const Profile: React.FC = () => {
 
           {hasManagementPermission && (
             <button 
+              type="button"
               onClick={() => setActiveSubTab('management')}
               className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition ${activeSubTab === 'management' ? 'bg-violet-600 text-white shadow-sm shadow-violet-600/20' : 'text-slate-600 hover:bg-slate-50'}`}
             >
@@ -119,7 +168,7 @@ const Profile: React.FC = () => {
 
         {/* --- TAB 1: THÔNG TIN TÀI KHOẢN --- */}
         {activeSubTab === 'account' && (
-          <form onSubmit={handleUpdate} className="space-y-8">
+          <form onSubmit={handleUpdate} noValidate className="space-y-8">
             <div>
               <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-5">Thông tin tài khoản cá nhân</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -129,11 +178,13 @@ const Profile: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Họ và tên</label>
-                  <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required className={inputCls} />
+                  <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className={fieldErrors.fullName ? errorCls : inputCls} />
+                  {fieldErrors.fullName && <span className="text-xs font-medium text-red-500 mt-1">{fieldErrors.fullName}</span>}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Số điện thoại</label>
-                  <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} />
+                  <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className={fieldErrors.phone ? errorCls : inputCls} />
+                  {fieldErrors.phone && <span className="text-xs font-medium text-red-500 mt-1">{fieldErrors.phone}</span>}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -159,15 +210,18 @@ const Profile: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tên doanh nghiệp</label>
-                    <input type="text" value={bizName} onChange={(e) => setBizName(e.target.value)} required className={inputCls} />
+                    <input type="text" value={bizName} onChange={(e) => setBizName(e.target.value)} className={fieldErrors.bizName ? errorCls : inputCls} />
+                    {fieldErrors.bizName && <span className="text-xs font-medium text-red-500 mt-1">{fieldErrors.bizName}</span>}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Mã số thuế</label>
-                    <input type="text" value={bizTax} onChange={(e) => setBizTax(e.target.value)} required className={inputCls} />
+                    <input type="text" value={bizTax} onChange={(e) => setBizTax(e.target.value)} className={fieldErrors.bizTax ? errorCls : inputCls} />
+                    {fieldErrors.bizTax && <span className="text-xs font-medium text-red-500 mt-1">{fieldErrors.bizTax}</span>}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Chức vụ đại diện</label>
-                    <input type="text" value={bizPosition} onChange={(e) => setBizPosition(e.target.value)} required className={inputCls} />
+                    <input type="text" value={bizPosition} onChange={(e) => setBizPosition(e.target.value)} className={fieldErrors.bizPosition ? errorCls : inputCls} />
+                    {fieldErrors.bizPosition && <span className="text-xs font-medium text-red-500 mt-1">{fieldErrors.bizPosition}</span>}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Trạng thái phê duyệt</label>
@@ -177,7 +231,8 @@ const Profile: React.FC = () => {
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Địa chỉ trụ sở chính</label>
-                    <input type="text" value={bizAddr} onChange={(e) => setBizAddr(e.target.value)} required className={inputCls} />
+                    <input type="text" value={bizAddr} onChange={(e) => setBizAddr(e.target.value)} className={fieldErrors.bizAddr ? errorCls : inputCls} />
+                    {fieldErrors.bizAddr && <span className="text-xs font-medium text-red-500 mt-1">{fieldErrors.bizAddr}</span>}
                   </div>
                 </div>
               </div>
@@ -226,7 +281,7 @@ const Profile: React.FC = () => {
                 <h3 className="text-lg font-bold text-slate-900 mb-2">Trang Quản lý Cơ sở (Hotel Manager Panel)</h3>
                 <p className="text-slate-600 text-sm mb-3">Bạn được cấp quyền quản lý vận hành trực tiếp khách sạn được chỉ định.</p>
                 <div className="p-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-500 shadow-sm">
-                  ⚡ Chức năng sắp triển khai: Quản lý loại phòng (`RoomTypes`), cấu hình Tiện nghi cụ thể và tiếp nhận đơn đặt phòng (`Bookings`).
+                  ⚡ Chức năng sắp triển khai: Quản lý loại phòng (`RoomTypes`), cấu hình Tiện nghi cụ thể và tiếp nhận lịch sử đặt phòng (`Bookings`).
                 </div>
               </div>
             )}

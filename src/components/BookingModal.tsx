@@ -118,14 +118,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       toast.success(res.data.message || 'Đặt phòng thành công!');
       navigate('/my-bookings');
     } catch (err: any) {
-      const data = err.response?.data;
-      if (data && data.Errors && Array.isArray(data.Errors) && data.Errors.length > 0) {
-        data.Errors.forEach((e: string) => toast.error(e));
-      } else if (data && (data.Message || data.message)) {
-        toast.error(data.Message || data.message);
-      } else {
-        toast.error('Có lỗi xảy ra khi đặt phòng.');
-      }
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi đặt phòng.');
     } finally {
       setLoading(false);
     }

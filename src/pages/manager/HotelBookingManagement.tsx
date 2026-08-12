@@ -1,26 +1,21 @@
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
-import api from '../../services/api';
-import toast from 'react-hot-toast';
-import { useConfirm } from '../../components/ConfirmModal';
-
-interface BookingItem {
-  id: string;
-  status: string;
-  paymentStatus: string;
-  depositAmount: number;
-  depositDeadline: string;
-  checkInDate: string;
-  checkOutDate: string;
-  numRooms: number;
-  totalPrice: number;
-  guestName: string;
-  guestPhone: string;
-  guestEmail: string;
-  cancelReason: string | null;
-  createdAt: string;
-  roomTypeName: string;
-  hotelName: string;
-}
+import React, { useState, useEffect } from 'react';
+import { useHotelBookingManagement } from '../../hooks/useHotelBookingManagement';
+import type { BookingItem, ExtensionAvailabilityDto } from '../../hooks/useHotelBookingManagement';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
+import { Button } from '../../components/ui/Button';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { Table } from '../../components/ui/Table';
+import { Pagination } from '../../components/ui/Pagination';
+import { Badge } from '../../components/ui/Badge';
+import { SidePanel } from '../../components/ui/SidePanel';
+import { Textarea } from '../../components/ui/Textarea';
+const Row: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+  <div className="flex justify-between gap-4 text-sm py-1">
+    <span className="text-slate-500 shrink-0">{label}</span>
+    <span className="text-slate-800 font-medium text-right">{value}</span>
+  </div>
+);
 
 const PAYMENT_MAP: Record<string, { label: string; color: string }> = {
   Unpaid:   { label: 'Chưa cọc',    color: 'bg-orange-100 text-orange-700 border border-orange-200' },
@@ -45,301 +40,605 @@ const FILTER_TABS = [
 ];
 
 const HotelBookingManagement: React.FC = () => {
-  const confirm = useConfirm();
-  const [bookings, setBookings] = useState<BookingItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Filter States
-  const [activeFilter, setActiveFilter] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [dateFilter, setDateFilter] = useState(''); // filter by check-in date (optional enhancement)
+  const {
+    loading,
+    processing,
+    filters,
+    pagination,
+    paginatedBookings,
+    rejectModal, setRejectModal,
+    rejectReason, setRejectReason,
+    handleApprove,
+    openRejectModal,
+    handleConfirmReject,
+    extendModal, setExtendModal,
+    checkExtensionAvailability,
+    handleExtend
+  } = useHotelBookingManagement();
 
-  // Modal từ chối
-  const [rejectModal, setRejectModal] = useState<{ id: string; guestName: string } | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
-  const [processing, setProcessing] = useState(false);
+  const [detailBooking, setDetailBooking] = useState<BookingItem | null>(null);
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const columns = [
+    {
+      key: 'customer',
+      header: 'Khách hàng',
+      render: (b: BookingItem) => (
+        <div>
+          <p className="font-semibold text-slate-900">{b.guestName}</p>
+          <p className="text-xs text-slate-500 mt-0.5">{b.guestPhone}</p>
+          <p className="text-xs text-slate-400">{b.guestEmail}</p>
+        </div>
+      )
+    },
+    {
+      key: 'roomType',
+      header: 'Các loại phòng',
+      render: (b: BookingItem) => (
+        <span className="font-medium text-slate-700">
+          {b.items && b.items.length > 0 
+            ? b.items[0].roomTypeName + (b.items.length > 1 ? ` và ${b.items.length - 1} loại khác` : '')
+            : ''}
+        </span>
+      )
+    },
+    {
+      key: 'stay',
+      header: 'Lưu trú',
+      render: (b: BookingItem) => {
+        const numNights = Math.floor((new Date(b.checkOutDate).getTime() - new Date(b.checkInDate).getTime()) / 86400000);
+        return (
+          <div>
+            <p className="text-slate-700 font-medium">{new Date(b.checkInDate).toLocaleDateString('vi-VN')}</p>
+            <p className="text-slate-400 text-xs">→ {new Date(b.checkOutDate).toLocaleDateString('vi-VN')}</p>
+            <p className="text-slate-500 text-xs mt-1 font-semibold">{numNights} đêm</p>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'quantity',
+      header: 'SL',
+      align: 'center' as const,
+      render: (b: BookingItem) => (
+        <span className="font-semibold text-slate-700">
+          {b.items?.reduce((sum, item) => sum + item.numRooms, 0) || 0}
+        </span>
+      )
+    },
+    {
+      key: 'total',
+      header: 'Tổng tiền',
+      render: (b: BookingItem) => <span className="font-bold text-violet-700">{b.totalPrice.toLocaleString('vi-VN')}₫</span>
+    },
+    {
+      key: 'status',
+      header: 'Trạng thái',
+      render: (b: BookingItem) => {
+        const st = STATUS_MAP[b.status] || { label: b.status, color: '' };
+        let variant: 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'violet' = 'neutral';
+        if (b.status === 'Pending') variant = 'warning';
+        else if (b.status === 'Approved') variant = 'info';
+        else if (b.status === 'Confirmed') variant = 'success';
+        else if (b.status === 'Cancelled') variant = 'danger';
 
-  const fetchBookings = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params: Record<string, string> = {};
-      if (activeFilter) params.status = activeFilter;
-      const res = await api.get('/manager/bookings', { params });
-      setBookings(res.data.data || []);
-    } catch {
-      toast.error('Lỗi khi tải danh sách đơn đặt phòng');
-      setBookings([]);
-    } finally {
-      setLoading(false);
+        return (
+          <div>
+            <Badge variant={variant}>{st.label}</Badge>
+            {b.status === 'Cancelled' && b.cancelReason && (
+              <p className="text-xs text-red-500 mt-1.5 max-w-[180px] line-clamp-2" title={b.cancelReason}>
+                Lý do: {b.cancelReason}
+              </p>
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      key: 'payment',
+      header: 'Cọc',
+      render: (b: BookingItem) => {
+        if (!PAYMENT_MAP[b.paymentStatus] || b.status === 'Cancelled' || b.status === 'Pending') {
+          return <span className="text-slate-300 text-xs">—</span>;
+        }
+        let pVariant: 'success' | 'warning' | 'info' | 'neutral' = 'neutral';
+        if (b.paymentStatus === 'Paid') pVariant = 'success';
+        else if (b.paymentStatus === 'Unpaid') pVariant = 'warning';
+        else if (b.paymentStatus === 'Refunded') pVariant = 'info';
+
+        return (
+          <div>
+            <Badge variant={pVariant}>{PAYMENT_MAP[b.paymentStatus].label}</Badge>
+            {b.paymentStatus === 'Unpaid' && (
+              <p className="text-xs text-orange-500 mt-1">
+                {b.depositAmount.toLocaleString('vi-VN')}₫
+              </p>
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      key: 'actions',
+      header: 'Thao tác',
+      align: 'center' as const,
+      render: (b: BookingItem) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const checkIn = new Date(b.checkInDate); checkIn.setHours(0, 0, 0, 0);
+        const checkOut = new Date(b.checkOutDate); checkOut.setHours(0, 0, 0, 0);
+        const canExtend = b.status === 'Confirmed' && b.paymentStatus === 'Paid' && today >= checkIn && today < checkOut;
+
+        return (
+          <div className="flex flex-col items-center justify-center gap-2">
+            {b.status === 'Pending' && (
+              <div className="flex gap-2">
+                <Button size="sm" variant="primary" onClick={() => handleApprove(b.id)} isLoading={processing}>
+                  Duyệt
+                </Button>
+                <Button size="sm" variant="danger" onClick={() => openRejectModal(b.id, b.guestName)} isLoading={processing}>
+                  Từ chối
+                </Button>
+              </div>
+            )}
+            {canExtend && (
+              <Button size="sm" variant="info" onClick={() => setExtendModal(b)} className="w-full">
+                Gia hạn
+              </Button>
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      key: 'detail',
+      header: 'Chi tiết',
+      align: 'center' as const,
+      render: (b: BookingItem) => (
+        <Button size="sm" variant="outline" onClick={() => setDetailBooking(b)}>
+          Chi tiết
+        </Button>
+      )
     }
-  }, [activeFilter]);
-
-  useEffect(() => { fetchBookings(); }, [fetchBookings]);
-
-  // Client-side filtering for Search & Date
-  const filteredBookings = useMemo(() => {
-    return bookings.filter(b => {
-      const q = searchQuery.toLowerCase();
-      const matchSearch = !searchQuery || 
-        b.guestName.toLowerCase().includes(q) || 
-        b.guestEmail.toLowerCase().includes(q) ||
-        b.guestPhone.includes(q);
-      
-      const matchDate = !dateFilter || b.checkInDate.startsWith(dateFilter);
-      
-      return matchSearch && matchDate;
-    });
-  }, [bookings, searchQuery, dateFilter]);
-
-  // Pagination logic
-  const totalPages = Math.max(1, Math.ceil(filteredBookings.length / itemsPerPage));
-  const paginatedBookings = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredBookings.slice(start, start + itemsPerPage);
-  }, [filteredBookings, currentPage]);
-
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, activeFilter, dateFilter]);
-
-  const handleApprove = async (bookingId: string) => {
-    const ok = await confirm({
-      title: 'Duyệt đơn đặt phòng',
-      message: 'Xác nhận duyệt đơn này? Hệ thống sẽ gửi email yêu cầu đặt cọc cho khách hàng.',
-      confirmText: 'Duyệt',
-      variant: 'info',
-    });
-    if (!ok) return;
-    setProcessing(true);
-    try {
-      await api.put(`/manager/bookings/${bookingId}/status`, { action: 'approve' });
-      toast.success('Đã duyệt đơn. Hệ thống đã gửi yêu cầu cọc cho khách.');
-      fetchBookings();
-    } catch (e: unknown) {
-      const err = e as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Thao tác thất bại.');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const openRejectModal = (id: string, guestName: string) => {
-    setRejectModal({ id, guestName });
-    setRejectReason('');
-  };
-
-  const handleConfirmReject = async () => {
-    if (!rejectModal) return;
-    if (!rejectReason.trim()) { toast.error('Vui lòng nhập lý do từ chối.'); return; }
-    setProcessing(true);
-    try {
-      await api.put(`/manager/bookings/${rejectModal.id}/status`, {
-        action: 'reject',
-        cancelReason: rejectReason,
-      });
-      toast.success('Đã từ chối đơn đặt phòng.');
-      setRejectModal(null);
-      fetchBookings();
-    } catch (e: unknown) {
-      const err = e as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Thao tác thất bại.');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const inputCls = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white";
+  ];
 
   return (
     <div className="space-y-6 w-full">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">Quản Lý Đơn Đặt Phòng</h1>
-        <p className="text-sm text-slate-500 mt-1">Xem, xác nhận hoặc từ chối các đơn đặt phòng từ khách hàng</p>
-      </div>
+      <PageHeader
+        title="Quản Lý Đơn Đặt Phòng"
+        description="Xem, xác nhận hoặc từ chối các đơn đặt phòng từ khách hàng"
+      />
 
       {/* Toolbar: Filters */}
-      <div className="flex flex-wrap gap-3 p-4 bg-white rounded-xl border border-slate-200 shadow-sm items-center">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          placeholder="Tìm tên khách, email, SĐT..."
-          className={`flex-1 min-w-[200px] ${inputCls}`}
-        />
+      <div className="flex flex-wrap gap-3 p-4 bg-white rounded-xl border border-slate-200 shadow-sm items-end">
+        <div className="flex-1 min-w-[200px]">
+          <Input
+            label="Tìm kiếm"
+            type="text"
+            value={filters.searchQuery}
+            onChange={e => filters.setSearchQuery(e.target.value)}
+            placeholder="Tìm tên khách, email, SĐT..."
+          />
+        </div>
         
-        <select value={activeFilter} onChange={e => setActiveFilter(e.target.value)} className={`${inputCls} w-auto min-w-[150px]`}>
-          {FILTER_TABS.map(tab => (
-            <option key={tab.value} value={tab.value}>{tab.label}</option>
-          ))}
-        </select>
-
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-500 font-semibold uppercase">Ngày Check-in:</label>
-          <input 
-            type="date" 
-            value={dateFilter} 
-            onChange={e => setDateFilter(e.target.value)} 
-            className={`${inputCls} w-auto`}
+        <div className="w-48">
+          <Select 
+            label="Trạng thái"
+            value={filters.activeFilter} 
+            onChange={val => filters.setActiveFilter(val)} 
+            options={FILTER_TABS} 
           />
         </div>
 
-        {(searchQuery || activeFilter || dateFilter) && (
-          <button onClick={() => { setSearchQuery(''); setActiveFilter(''); setDateFilter(''); }}
-            className="px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+        <div className="w-40">
+          <Input 
+            label="Ngày Check-in"
+            type="date" 
+            value={filters.dateFilter} 
+            onChange={e => filters.setDateFilter(e.target.value)} 
+          />
+        </div>
+
+        {(filters.searchQuery || filters.activeFilter || filters.dateFilter) && (
+          <Button onClick={() => { filters.setSearchQuery(''); filters.setActiveFilter(''); filters.setDateFilter(''); }}
+            variant="ghost" className="!bg-slate-100 !text-slate-600 hover:!bg-slate-200 border-none mb-1 shadow-none">
             Xóa lọc
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Bảng danh sách */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-        {loading ? (
-          <div className="p-10 text-center text-slate-400">Đang tải...</div>
-        ) : paginatedBookings.length === 0 ? (
-          <div className="p-16 text-center">
-            <p className="text-slate-400 font-medium">Không tìm thấy đơn đặt phòng phù hợp.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left border-collapse">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Khách hàng</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Loại phòng</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Lưu trú</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">SL</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng tiền</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Trạng thái</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Cọc</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {paginatedBookings.map(booking => {
-                  const status = STATUS_MAP[booking.status] || { label: booking.status, color: '' };
-                  const numNights = Math.floor((new Date(booking.checkOutDate).getTime() - new Date(booking.checkInDate).getTime()) / 86400000);
-                  return (
-                    <tr key={booking.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-4">
-                        <p className="font-semibold text-slate-900">{booking.guestName}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{booking.guestPhone}</p>
-                        <p className="text-xs text-slate-400">{booking.guestEmail}</p>
-                      </td>
-                      <td className="px-5 py-4 font-medium text-slate-700">{booking.roomTypeName}</td>
-                      <td className="px-5 py-4">
-                        <p className="text-slate-700 font-medium">{new Date(booking.checkInDate).toLocaleDateString('vi-VN')}</p>
-                        <p className="text-slate-400 text-xs">→ {new Date(booking.checkOutDate).toLocaleDateString('vi-VN')}</p>
-                        <p className="text-slate-500 text-xs mt-1 font-semibold">{numNights} đêm</p>
-                      </td>
-                      <td className="px-5 py-4 text-center font-semibold text-slate-700">{booking.numRooms}</td>
-                      <td className="px-5 py-4 font-bold text-violet-700">{booking.totalPrice.toLocaleString('vi-VN')}₫</td>
-                      <td className="px-5 py-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${status.color}`}>{status.label}</span>
-                        {booking.status === 'Cancelled' && booking.cancelReason && (
-                          <p className="text-xs text-red-500 mt-1.5 max-w-[180px] line-clamp-2" title={booking.cancelReason}>
-                            Lý do: {booking.cancelReason}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-5 py-4">
-                        {PAYMENT_MAP[booking.paymentStatus] && booking.status !== 'Cancelled' && booking.status !== 'Pending' ? (
-                          <div>
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${PAYMENT_MAP[booking.paymentStatus].color}`}>
-                              {PAYMENT_MAP[booking.paymentStatus].label}
-                            </span>
-                            {booking.paymentStatus === 'Unpaid' && (
-                              <p className="text-xs text-orange-500 mt-1">
-                                {booking.depositAmount.toLocaleString('vi-VN')}₫
-                              </p>
-                            )}
-                          </div>
-                        ) : <span className="text-slate-300 text-xs">—</span>}
-                      </td>
-                      <td className="px-5 py-4">
-                        {booking.status === 'Pending' && (
-                          <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => handleApprove(booking.id)} disabled={processing}
-                              className="text-xs bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-semibold px-3 py-1.5 rounded-lg transition shadow-sm">
-                              Duyệt
-                            </button>
-                            <button onClick={() => openRejectModal(booking.id, booking.guestName)} disabled={processing}
-                              className="text-xs bg-red-50 hover:bg-red-100 disabled:bg-slate-100 text-red-600 font-semibold px-3 py-1.5 rounded-lg transition">
-                              Từ chối
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-        
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="p-4 bg-slate-50 border-t flex justify-between items-center text-xs">
-            <span className="text-slate-500">
-              Trang {currentPage} / {totalPages} — {filteredBookings.length} đơn
-            </span>
-            <div className="flex gap-2">
-              <button disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg disabled:opacity-40 hover:bg-slate-50 transition">
-                Trước
-              </button>
-              <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(c => c + 1)}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg disabled:opacity-40 hover:bg-slate-50 transition">
-                Sau
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      <Table
+        columns={columns}
+        data={paginatedBookings}
+        keyExtractor={b => b.id}
+        isLoading={loading}
+        emptyMessage="Không tìm thấy đơn đặt phòng phù hợp."
+      />
+      
+      {/* Pagination Controls */}
+      <Pagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        onPageChange={pagination.setCurrentPage}
+      />
 
       {/* Reject Modal */}
-      {rejectModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 animate-fade-in-up">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-bold text-slate-900 text-lg">Từ chối đơn đặt phòng</h3>
-              <button onClick={() => setRejectModal(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
-            </div>
-            <div className="p-6 space-y-4">
-              <p className="text-sm text-slate-600">
-                Bạn đang từ chối đơn của khách hàng <strong className="text-slate-900">{rejectModal.guestName}</strong>. 
-                Hệ thống bắt buộc bạn phải nhập lý do (hết phòng, thông tin không hợp lệ...) để thông báo cho khách.
-              </p>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Lý do từ chối (Bắt buộc)</label>
-                <textarea
-                  rows={3}
-                  value={rejectReason}
-                  onChange={e => setRejectReason(e.target.value)}
-                  placeholder="Nhập lý do chi tiết..."
-                  className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none resize-none"
-                  autoFocus
-                />
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-2xl">
-              <button onClick={() => setRejectModal(null)} disabled={processing}
-                className="px-4 py-2 bg-white border border-slate-300 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-100 transition">
-                Hủy bỏ
-              </button>
-              <button onClick={handleConfirmReject} disabled={processing}
-                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition disabled:opacity-50 shadow-sm shadow-red-600/20">
-                {processing ? 'Đang xử lý...' : 'Gửi Từ Chối'}
-              </button>
-            </div>
-          </div>
+      <SidePanel
+        isOpen={!!rejectModal}
+        onClose={() => setRejectModal(null)}
+        title="Từ chối đơn đặt phòng"
+        width="md"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setRejectModal(null)} disabled={processing}>
+              Hủy bỏ
+            </Button>
+            <Button variant="danger" onClick={handleConfirmReject} isLoading={processing}>
+              Gửi Từ Chối
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            Bạn đang từ chối đơn của khách hàng <strong className="text-slate-900">{rejectModal?.guestName}</strong>. 
+            Hệ thống bắt buộc bạn phải nhập lý do (hết phòng, thông tin không hợp lệ...) để thông báo cho khách.
+          </p>
+          <Textarea
+            label="Lý do từ chối (Bắt buộc)"
+            rows={3}
+            value={rejectReason}
+            onChange={e => setRejectReason(e.target.value)}
+            placeholder="Nhập lý do chi tiết..."
+          />
         </div>
+      </SidePanel>
+
+      {/* Extend Modal */}
+      {extendModal && (
+        <ExtendBookingPanel
+          booking={extendModal}
+          onClose={() => setExtendModal(null)}
+          onExtend={handleExtend}
+          checkAvailability={checkExtensionAvailability}
+          processing={processing}
+        />
+      )}
+
+      {/* ── Detail Modal ── */}
+      {detailBooking && (
+        <ManagerBookingDetailModal
+          booking={detailBooking}
+          onClose={() => setDetailBooking(null)}
+          onApprove={handleApprove}
+          onReject={openRejectModal}
+          processing={processing}
+        />
       )}
     </div>
   );
 };
 
 export default HotelBookingManagement;
+
+// ── Manager Booking Detail Modal ──
+const STATUS_MAP_MODAL: Record<string, { label: string; color: string }> = {
+  Pending:   { label: 'Chờ xác nhận',       color: 'bg-amber-100 text-amber-700' },
+  Approved:  { label: 'Chờ thanh toán cọc', color: 'bg-blue-100 text-blue-700' },
+  Confirmed: { label: 'Đã xác nhận',        color: 'bg-emerald-100 text-emerald-700' },
+  Cancelled: { label: 'Đã hủy',             color: 'bg-red-100 text-red-700' },
+  Completed: { label: 'Hoàn thành',         color: 'bg-slate-100 text-slate-600' },
+};
+
+function ManagerBookingDetailModal({
+  booking, onClose, onApprove, onReject, processing
+}: {
+  booking: BookingItem;
+  onClose: () => void;
+  onApprove: (id: string) => void;
+  onReject: (id: string, guestName: string) => void;
+  processing: boolean;
+}) {
+  const st = STATUS_MAP_MODAL[booking.status] ?? { label: booking.status, color: '' };
+  const nights = Math.round(
+    (new Date(booking.checkOutDate).getTime() - new Date(booking.checkInDate).getTime()) / 86400000
+  );
+  return (
+    <SidePanel
+      isOpen={true}
+      onClose={onClose}
+      title="Chi tiết đơn đặt phòng"
+      width="lg"
+    >
+      <div className="space-y-5">
+        <div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Khách hàng</p>
+          <div className="bg-slate-50 rounded-xl p-4 space-y-1">
+            <Row label="Họ tên" value={booking.guestName} />
+            <Row label="Số điện thoại" value={booking.guestPhone} />
+            <Row label="Email" value={booking.guestEmail} />
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Thông tin đặt phòng</p>
+          <div className="bg-slate-50 rounded-xl p-4 space-y-1">
+            <Row 
+              label="Các loại phòng" 
+              value={
+                <ul className="text-right">
+                  {booking.items?.map((item, idx) => (
+                    <li key={idx}>
+                      {item.roomTypeName} <span className="text-slate-400">x{item.numRooms}</span>
+                    </li>
+                  ))}
+                </ul>
+              } 
+            />
+            <Row label="Check-in" value={new Date(booking.checkInDate).toLocaleDateString('vi-VN')} />
+            <Row label="Check-out" value={new Date(booking.checkOutDate).toLocaleDateString('vi-VN')} />
+            <Row label="Số đêm" value={`${nights} đêm`} />
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Thanh toán &amp; Trạng thái</p>
+          <div className="bg-slate-50 rounded-xl p-4 space-y-1">
+            <Row label="Tổng tiền" value={booking.totalPrice.toLocaleString('vi-VN') + '₫'} />
+            <Row label="Tiền cọc" value={booking.depositAmount.toLocaleString('vi-VN') + '₫'} />
+            <Row label="Trạng thái" value={
+              <Badge variant={st.label === 'Chờ xác nhận' ? 'warning' : st.label === 'Chờ thanh toán cọc' ? 'info' : st.label === 'Đã xác nhận' ? 'success' : st.label === 'Đã hủy' ? 'danger' : 'neutral'}>
+                {st.label}
+              </Badge>
+            } />
+            {booking.cancelReason && <Row label="Lý do hủy" value={booking.cancelReason} />}
+          </div>
+        </div>
+
+        {/* Actions for Pending bookings */}
+        {booking.status === 'Pending' && (
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Hành động</p>
+            <div className="flex gap-3">
+              <Button
+                variant="primary"
+                onClick={() => { onApprove(booking.id); onClose(); }}
+                isLoading={processing}
+                className="flex-1"
+              >
+                Duyệt đơn
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => { onReject(booking.id, booking.guestName); onClose(); }}
+                isLoading={processing}
+                className="flex-1"
+              >
+                Từ chối
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </SidePanel>
+  );
+}
+
+// ── Extend Booking Panel ──
+function ExtendBookingPanel({
+  booking, onClose, onExtend, checkAvailability, processing
+}: {
+  booking: BookingItem;
+  onClose: () => void;
+  onExtend: (id: string, newCheckOutDate: string, items: {roomTypeId: string, numRooms: number}[]) => void;
+  checkAvailability: (id: string, date: string, items: {roomTypeId: string, numRooms: number}[]) => Promise<ExtensionAvailabilityDto | null>;
+  processing: boolean;
+}) {
+  const [newCheckOutDate, setNewCheckOutDate] = useState('');
+  const [availability, setAvailability] = useState<ExtensionAvailabilityDto | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [selectedItems, setSelectedItems] = useState(() => 
+    booking.items.map(i => ({ roomTypeId: i.roomTypeId, numRooms: i.numRooms, max: i.numRooms, roomTypeName: i.roomTypeName }))
+  );
+
+  // Set min date to tomorrow of current checkout
+  let minDateStr = '';
+  let originalCheckOut = new Date();
+  try {
+    originalCheckOut = new Date(booking.checkOutDate);
+    const minDate = new Date(originalCheckOut);
+    minDate.setDate(minDate.getDate() + 1);
+    minDateStr = minDate.toISOString().split('T')[0];
+  } catch (e) {
+    console.error("Date parsing error", e);
+  }
+
+  useEffect(() => {
+    let active = true;
+    const fetchAvailability = async () => {
+      if (!newCheckOutDate) {
+        setAvailability(null);
+        return;
+      }
+      const itemsToExtend = selectedItems.filter(i => i.numRooms > 0).map(i => ({ roomTypeId: i.roomTypeId, numRooms: i.numRooms }));
+      if (itemsToExtend.length === 0) {
+        setAvailability(null);
+        return;
+      }
+      setChecking(true);
+      const res = await checkAvailability(booking.id, newCheckOutDate, itemsToExtend);
+      if (active) {
+        setAvailability(res);
+        setChecking(false);
+      }
+    };
+    fetchAvailability();
+    return () => { active = false; };
+  }, [newCheckOutDate, booking.id, checkAvailability, selectedItems]);
+
+  const handleNumRoomsChange = (roomTypeId: string, delta: number) => {
+    setSelectedItems(prev => prev.map(i => {
+      if (i.roomTypeId === roomTypeId) {
+        const newVal = Math.max(0, Math.min(i.max, i.numRooms + delta));
+        return { ...i, numRooms: newVal };
+      }
+      return i;
+    }));
+  };
+
+  const totalSelectedRooms = selectedItems.reduce((acc, curr) => acc + curr.numRooms, 0);
+
+  return (
+    <SidePanel
+      isOpen={true}
+      onClose={onClose}
+      title={`Gia hạn đặt phòng - ${booking.guestName}`}
+      width="md"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose} disabled={processing || checking}>
+            Hủy
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => {
+              const itemsToExtend = selectedItems.filter(i => i.numRooms > 0).map(i => ({ roomTypeId: i.roomTypeId, numRooms: i.numRooms }));
+              onExtend(booking.id, newCheckOutDate, itemsToExtend);
+            }} 
+            isLoading={processing}
+            disabled={!newCheckOutDate || !availability?.allAvailable || checking || totalSelectedRooms === 0}
+          >
+            Xác nhận gia hạn
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-6">
+        {/* Thông tin đơn cũ */}
+        <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm space-y-3">
+          <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Thông tin khách hàng & Thời gian lưu trú</h4>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-slate-500 text-xs mb-1">Tên khách hàng</p>
+              <p className="font-medium text-slate-900">{booking.guestName}</p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs mb-1">Số điện thoại</p>
+              <p className="font-medium text-slate-900">{booking.guestPhone}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-slate-500 text-xs mb-1">Email</p>
+              <p className="font-medium text-slate-900">{booking.guestEmail}</p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs mb-1">Check-in</p>
+              <p className="font-medium text-slate-900">{new Date(booking.checkInDate).toLocaleDateString('vi-VN')}</p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs mb-1">Check-out (Hiện tại)</p>
+              <p className="font-medium text-slate-900">{originalCheckOut.toLocaleDateString('vi-VN')}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
+          <p className="text-sm text-blue-800">
+            Hệ thống sẽ tạo <strong>một đơn đặt phòng mới</strong> với ngày check-in là ngày check-out hiện tại ({originalCheckOut.toLocaleDateString('vi-VN')}). 
+            Đơn mới sẽ tự động được đánh dấu là <strong>Đã xác nhận &amp; Đã thanh toán cọc</strong>. Khách hàng sẽ thanh toán tiền mặt phần gia hạn tại quầy.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Ngày trả phòng mới <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            min={minDateStr}
+            value={newCheckOutDate}
+            onChange={e => setNewCheckOutDate(e.target.value)}
+            className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-slate-900 outline-none transition-all focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Chọn số lượng phòng muốn gia hạn
+          </label>
+          <div className="space-y-2">
+            {selectedItems.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl">
+                <div>
+                  <p className="font-medium text-sm text-slate-900">{item.roomTypeName}</p>
+                  <p className="text-xs text-slate-500">Tối đa: {item.max} phòng</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button 
+                    className="w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg disabled:opacity-50 transition-colors"
+                    onClick={() => handleNumRoomsChange(item.roomTypeId, -1)}
+                    disabled={item.numRooms <= 0}
+                  >
+                    -
+                  </button>
+                  <span className="w-4 text-center font-bold text-slate-900 text-sm">{item.numRooms}</span>
+                  <button 
+                    className="w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg disabled:opacity-50 transition-colors"
+                    onClick={() => handleNumRoomsChange(item.roomTypeId, 1)}
+                    disabled={item.numRooms >= item.max}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {totalSelectedRooms === 0 && (
+            <p className="text-xs text-red-500 mt-2">Vui lòng chọn ít nhất 1 phòng để gia hạn.</p>
+          )}
+        </div>
+
+        {checking && <p className="text-sm text-slate-500 italic">Đang kiểm tra phòng trống...</p>}
+
+        {!checking && availability && totalSelectedRooms > 0 && (
+          <div className="space-y-3">
+            <h4 className="text-sm font-bold text-slate-900">Chi tiết thanh toán gia hạn</h4>
+            <div className="bg-slate-50 border border-slate-200 rounded-xl divide-y divide-slate-100">
+              {availability?.items?.map((item, idx) => (
+                <div key={idx} className="p-3 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-slate-900 text-sm">{item?.roomTypeName}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Yêu cầu: {item?.requiredRooms} phòng — Trống: {item?.availableRooms} phòng
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    {item?.isAvailable ? (
+                      <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-md">
+                        Đủ phòng
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-md">
+                        Hết phòng
+                      </span>
+                    )}
+                    <p className="text-sm font-bold text-violet-700 mt-1">{item?.subTotal?.toLocaleString('vi-VN')}₫</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex justify-between items-center bg-violet-50 p-4 rounded-xl border border-violet-100 mt-4">
+              <span className="font-bold text-violet-900">Tổng tiền gia hạn:</span>
+              <span className="font-black text-xl text-violet-700">{availability?.estimatedTotal?.toLocaleString('vi-VN')}₫</span>
+            </div>
+
+            {!availability?.allAvailable && (
+              <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
+                Không thể gia hạn do một số loại phòng đã hết trống trong khoảng thời gian này.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </SidePanel>
+  );
+}
