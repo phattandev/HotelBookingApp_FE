@@ -11,6 +11,7 @@ const DepositPolicyPage: React.FC<{ isPending?: boolean }> = ({ isPending }) => 
     isEditing,
     setIsEditing,
     formData,
+    fieldErrors,
     handleSubmit,
     handleEdit,
   } = useDepositPolicy();
@@ -83,7 +84,7 @@ const DepositPolicyPage: React.FC<{ isPending?: boolean }> = ({ isPending }) => 
 
       {/* Edit / Create form */}
       {isEditing && (
-        <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
+        <form onSubmit={handleSubmit} noValidate className="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
           <p className="font-semibold text-slate-800">
             {policy ? 'Chỉnh sửa chính sách đặt cọc' : 'Tạo chính sách đặt cọc mới'}
           </p>
@@ -96,8 +97,8 @@ const DepositPolicyPage: React.FC<{ isPending?: boolean }> = ({ isPending }) => 
               max="100"
               value={formData.percentage.toString()}
               onChange={e => formData.setPercentage(Number(e.target.value))}
-              required
               placeholder="Ví dụ: 50 (50% tổng tiền phòng)"
+              error={fieldErrors?.percentage}
             />
             <p className="text-xs text-slate-400 mt-1">
               Số tiền khách phải cọc = {formData.percentage}% × Tổng tiền phòng
@@ -111,8 +112,8 @@ const DepositPolicyPage: React.FC<{ isPending?: boolean }> = ({ isPending }) => 
               min="1"
               value={formData.hours.toString()}
               onChange={e => formData.setHours(Number(e.target.value))}
-              required
               placeholder="Ví dụ: 24 (phải cọc trước 1 ngày)"
+              error={fieldErrors?.hours}
             />
             <p className="text-xs text-slate-400 mt-1">
               Khách phải thanh toán cọc ít nhất {formData.hours} giờ trước 00:00 ngày nhận phòng.

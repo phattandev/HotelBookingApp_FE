@@ -11,6 +11,7 @@ const CancellationPolicyPage: React.FC<{ isPending?: boolean }> = ({ isPending }
     isEditing,
     setIsEditing,
     formData,
+    fieldErrors,
     handleSubmit,
   } = useCancellationPolicy();
 
@@ -80,7 +81,7 @@ const CancellationPolicyPage: React.FC<{ isPending?: boolean }> = ({ isPending }
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6 w-full max-w-3xl">
+        <form onSubmit={handleSubmit} noValidate className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6 w-full max-w-3xl">
           <h3 className="font-bold text-slate-900 text-lg border-b border-slate-100 pb-3">{policy ? 'Chỉnh sửa chính sách' : 'Tạo chính sách mới'}</h3>
 
           <div>
@@ -90,7 +91,7 @@ const CancellationPolicyPage: React.FC<{ isPending?: boolean }> = ({ isPending }
               value={formData.policyName}
               onChange={e => formData.setPolicyName(e.target.value)}
               placeholder="VD: Linh hoạt 24h, Tiêu chuẩn 48h..."
-              required
+              error={fieldErrors?.policyName}
             />
           </div>
 
@@ -102,7 +103,7 @@ const CancellationPolicyPage: React.FC<{ isPending?: boolean }> = ({ isPending }
                 min="1"
                 value={formData.hours.toString()}
                 onChange={e => formData.setHours(Number(e.target.value))}
-                required
+                error={fieldErrors?.hours}
               />
               <p className="text-xs text-slate-400 mt-1.5">Hủy trước mốc này → hoàn 100%</p>
             </div>
@@ -116,7 +117,7 @@ const CancellationPolicyPage: React.FC<{ isPending?: boolean }> = ({ isPending }
                 step="5"
                 value={formData.penalty.toString()}
                 onChange={e => formData.setPenalty(Number(e.target.value))}
-                required
+                error={fieldErrors?.penalty}
               />
               <p className="text-xs text-slate-400 mt-1.5">Hủy sau mốc → phạt {formData.penalty}%, hoàn {100 - formData.penalty}%</p>
             </div>

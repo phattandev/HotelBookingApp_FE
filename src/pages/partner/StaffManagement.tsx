@@ -15,10 +15,11 @@ const StaffManagement: React.FC = () => {
     uniqueHotels,
     paginatedEmployees,
     // Add modal
-    isModalOpen, setIsModalOpen,
+    isModalOpen, setIsModalOpen, handleOpenAddModal,
     submitting,
     formData,
     handleAddEmployee,
+    addFieldErrors,
     // Edit modal
     editEmployee,
     editFullName, setEditFullName,
@@ -28,6 +29,7 @@ const StaffManagement: React.FC = () => {
     openEditModal,
     closeEditModal,
     handleUpdateEmployee,
+    editFieldErrors,
     // Actions
     handleToggleStatus,
     getSystemRoleLabel,
@@ -43,7 +45,7 @@ const StaffManagement: React.FC = () => {
         title="Quản lý Nhân sự"
         description="Danh sách tài khoản nhân viên thuộc doanh nghiệp"
         action={
-          <Button onClick={() => setIsModalOpen(true)} variant="primary">
+          <Button onClick={handleOpenAddModal} variant="primary">
             Thêm Nhân Viên
           </Button>
         }
@@ -203,18 +205,18 @@ const StaffManagement: React.FC = () => {
         <p className="text-xs text-slate-500 mb-5 pb-3 border-b border-slate-100">
           Nhân viên mới sẽ ở trạng thái <strong>"Chưa phân công"</strong>. Sau khi tạo, hãy vào mục Phân Công để giao vị trí.
         </p>
-        <form id="add-employee-form" onSubmit={handleAddEmployee} className="space-y-4">
+        <form id="add-employee-form" onSubmit={handleAddEmployee} noValidate className="space-y-4">
           <div>
-            <Input label="Họ và tên" type="text" required value={formData.fullName} onChange={e => formData.setFullName(e.target.value)} />
+            <Input label="Họ và tên" type="text" value={formData.fullName} onChange={e => formData.setFullName(e.target.value)} error={addFieldErrors?.fullName} />
           </div>
           <div>
-            <Input label="Email (Đăng nhập)" type="email" required value={formData.email} onChange={e => formData.setEmail(e.target.value)} />
+            <Input label="Email (Đăng nhập)" type="email" value={formData.email} onChange={e => formData.setEmail(e.target.value)} error={addFieldErrors?.email} />
           </div>
           <div>
-            <Input label="Số điện thoại" type="text" required value={formData.phone} onChange={e => formData.setPhone(e.target.value)} />
+            <Input label="Số điện thoại" type="text" value={formData.phone} onChange={e => formData.setPhone(e.target.value)} error={addFieldErrors?.phone} />
           </div>
           <div>
-            <Input label="Mật khẩu khởi tạo" type="password" required value={formData.password} onChange={e => formData.setPassword(e.target.value)} />
+            <Input label="Mật khẩu khởi tạo" type="password" value={formData.password} onChange={e => formData.setPassword(e.target.value)} error={addFieldErrors?.password} />
           </div>
         </form>
       </SidePanel>
@@ -239,14 +241,14 @@ const StaffManagement: React.FC = () => {
           <span className="ml-1 text-slate-400">(Email không thể thay đổi)</span>
         </p>
 
-        <form id="edit-employee-form" onSubmit={handleUpdateEmployee} className="space-y-4">
+        <form id="edit-employee-form" onSubmit={handleUpdateEmployee} noValidate className="space-y-4">
           <div>
             <Input
               label="Họ và tên"
               type="text"
-              required
               value={editFullName}
               onChange={e => setEditFullName(e.target.value)}
+              error={editFieldErrors?.fullName}
             />
           </div>
 
@@ -254,9 +256,9 @@ const StaffManagement: React.FC = () => {
             <Input
               label="Số điện thoại"
               type="text"
-              required
               value={editPhone}
               onChange={e => setEditPhone(e.target.value)}
+              error={editFieldErrors?.phone}
             />
           </div>
 
@@ -267,6 +269,7 @@ const StaffManagement: React.FC = () => {
               value={editNewPassword}
               onChange={e => setEditNewPassword(e.target.value)}
               placeholder="Tối thiểu 6 ký tự..."
+              error={editFieldErrors?.newPassword}
             />
           </div>
         </form>

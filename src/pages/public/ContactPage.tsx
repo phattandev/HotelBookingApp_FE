@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { isValidPhone } from '../../utils/formatters';
 
 interface FormData {
   fullName: string;
@@ -85,6 +86,15 @@ const ContactPage: React.FC = () => {
     if (!form.fullName.trim()) e.fullName = 'Vui lòng nhập họ tên';
     if (!form.email.trim()) e.email = 'Vui lòng nhập email';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Email không hợp lệ';
+    
+    if (form.phone.trim()) {
+      if (!/^[0-9]+$/.test(form.phone.trim())) {
+        e.phone = 'Số điện thoại chỉ được nhập số';
+      } else if (!isValidPhone(form.phone.trim())) {
+        e.phone = 'Số điện thoại phải từ 10-11 số';
+      }
+    }
+    
     if (!form.subject) e.subject = 'Vui lòng chọn chủ đề';
     if (!form.message.trim()) e.message = 'Vui lòng nhập nội dung';
     else if (form.message.trim().length < 20) e.message = 'Nội dung phải có ít nhất 20 ký tự';
@@ -202,6 +212,7 @@ const ContactPage: React.FC = () => {
                       placeholder="0901 234 567"
                       className={inputCls('phone')}
                     />
+                    {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                   </div>
                 </div>
 

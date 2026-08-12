@@ -14,6 +14,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ colorScheme = 'indigo' }) => 
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Form State
   const [fullName, setFullName] = useState('');
@@ -59,6 +60,28 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ colorScheme = 'indigo' }) => 
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
+
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!fullName) {
+      errors.fullName = 'Họ và tên không được để trống';
+      hasError = true;
+    }
+
+    if (user?.Role.toLowerCase() === 'partner') {
+      if (!bizName) { errors.bizName = 'Tên doanh nghiệp không được để trống'; hasError = true; }
+      if (!bizTax) { errors.bizTax = 'Mã số thuế không được để trống'; hasError = true; }
+      if (!bizAddr) { errors.bizAddr = 'Địa chỉ không được để trống'; hasError = true; }
+      if (!bizPosition) { errors.bizPosition = 'Chức vụ không được để trống'; hasError = true; }
+    }
+
+    if (hasError) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -86,7 +109,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ colorScheme = 'indigo' }) => 
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-4xl">
-      <form onSubmit={handleUpdate} className="space-y-6">
+      <form onSubmit={handleUpdate} noValidate className="space-y-6">
         <div>
           <h3 className="text-lg font-bold text-slate-900">Thông tin tài khoản cá nhân</h3>
           <p className="text-sm text-slate-500">Cập nhật thông tin cơ bản liên hệ của bạn</p>
@@ -94,8 +117,8 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ colorScheme = 'indigo' }) => 
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input label="Email hệ thống" type="text" value={user?.Email} disabled />
-          <Input label="Họ và tên" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-          <Input label="Số điện thoại" type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <Input label="Họ và tên" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} error={fieldErrors.fullName} />
+          <Input label="Số điện thoại" type="text" value={phone} onChange={(e) => setPhone(e.target.value)} error={fieldErrors.phone} />
           <Select 
             label="Giới tính" 
             value={gender} 
@@ -124,12 +147,12 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ colorScheme = 'indigo' }) => 
                   {bizStatus === 'Approved' ? 'Đã kích hoạt' : (bizStatus === 'Pending' ? 'Đang chờ Admin duyệt' : bizStatus)}
                 </div>
               </div>
-              <Input label="Tên doanh nghiệp" type="text" value={bizName} onChange={(e) => setBizName(e.target.value)} required />
-              <Input label="Mã số thuế" type="text" value={bizTax} onChange={(e) => setBizTax(e.target.value)} required />
+              <Input label="Tên doanh nghiệp" type="text" value={bizName} onChange={(e) => setBizName(e.target.value)} error={fieldErrors.bizName} />
+              <Input label="Mã số thuế" type="text" value={bizTax} onChange={(e) => setBizTax(e.target.value)} error={fieldErrors.bizTax} />
               <div className="md:col-span-2">
-                <Input label="Địa chỉ trụ sở chính" type="text" value={bizAddr} onChange={(e) => setBizAddr(e.target.value)} required />
+                <Input label="Địa chỉ trụ sở chính" type="text" value={bizAddr} onChange={(e) => setBizAddr(e.target.value)} error={fieldErrors.bizAddr} />
               </div>
-              <Input label="Chức vụ đại diện" type="text" value={bizPosition} onChange={(e) => setBizPosition(e.target.value)} required />
+              <Input label="Chức vụ đại diện" type="text" value={bizPosition} onChange={(e) => setBizPosition(e.target.value)} error={fieldErrors.bizPosition} />
             </div>
           </div>
         )}

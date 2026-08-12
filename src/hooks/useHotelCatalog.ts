@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { toSentenceCase, isValidTaxCode } from '../utils/formatters';
 
 export interface Hotel {
   id: string;
@@ -80,6 +81,7 @@ export const useHotelCatalog = () => {
 
   const [editingHotelId, setEditingHotelId] = useState<string | null>(null);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const fetchMyHotels = async () => {
     try {
@@ -101,8 +103,35 @@ export const useHotelCatalog = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
+
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!name.trim()) { 
+      errors.name = 'Tên khách sạn không được để trống'; hasError = true; 
+    } else if (name.trim().length < 2 || name.trim().length > 100) {
+      errors.name = 'Tên khách sạn phải từ 2 đến 100 ký tự'; hasError = true;
+    }
+    
+    if (!provinceId) { errors.provinceId = 'Vui lòng chọn Tỉnh/Thành'; hasError = true; }
+    if (!wardId) { errors.wardId = 'Vui lòng chọn Phường/Xã'; hasError = true; }
+    if (!addressLine.trim()) { errors.addressLine = 'Địa chỉ không được để trống'; hasError = true; }
+    
+    if (!taxCode.trim()) { 
+      errors.taxCode = 'Mã số thuế không được để trống'; hasError = true; 
+    } else if (!isValidTaxCode(taxCode.trim())) {
+      errors.taxCode = 'Mã số thuế phải gồm 10 số hoặc 13 số (VD: 0123456789 hoặc 0123456789-001)'; hasError = true;
+    }
+
+    if (hasError) {
+      setFieldErrors(errors);
+      return;
+    }
+
     try {
-      await api.post('/hotels/register', { name, taxCode, addressLine, wardId });
+      const formattedName = toSentenceCase(name.trim());
+      await api.post('/hotels/register', { name: formattedName, taxCode: taxCode.trim(), addressLine, wardId });
       toast.success('Tạo bản nháp khách sạn thành công! Hãy hoàn thiện thông tin trước khi gửi.');
       setIsRegisterModalOpen(false);
       setName(''); setAddressLine(''); setProvinceId(''); setWardId(''); setTaxCode('');
@@ -127,10 +156,31 @@ export const useHotelCatalog = () => {
 
   const handleUpdateBasicInfo = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
+
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!name.trim()) { 
+      errors.name = 'Tên khách sạn không được để trống'; hasError = true; 
+    } else if (name.trim().length < 2 || name.trim().length > 100) {
+      errors.name = 'Tên khách sạn phải từ 2 đến 100 ký tự'; hasError = true;
+    }
+    
+    if (!provinceId) { errors.provinceId = 'Vui lòng chọn Tỉnh/Thành'; hasError = true; }
+    if (!wardId) { errors.wardId = 'Vui lòng chọn Phường/Xã'; hasError = true; }
+    if (!addressLine.trim()) { errors.addressLine = 'Địa chỉ không được để trống'; hasError = true; }
+
+    if (hasError) {
+      setFieldErrors(errors);
+      return;
+    }
+
     if (!editingHotelId) return;
     try {
+      const formattedName = toSentenceCase(name.trim());
       await api.put(`/hotels/${editingHotelId}/basic-info`, {
-        name, addressLine, wardId
+        name: formattedName, addressLine, wardId
       });
       toast.success('Cập nhật thông tin khách sạn thành công');
       setEditingHotelId(null);
@@ -149,6 +199,7 @@ export const useHotelCatalog = () => {
     setProvinceId(hotel.provinceId || '');
     setWardId(hotel.wardId || '');
     setEditingHotelId(hotel.id);
+    setFieldErrors({});
   };
 
   const totalPages = Math.ceil(hotels.length / itemsPerPage);
@@ -156,6 +207,12 @@ export const useHotelCatalog = () => {
     const start = (currentPage - 1) * itemsPerPage;
     return hotels.slice(start, start + itemsPerPage);
   }, [hotels, currentPage]);
+
+  const handleOpenRegisterModal = () => {
+    setName(''); setAddressLine(''); setProvinceId(''); setWardId(''); setTaxCode('');
+    setFieldErrors({});
+    setIsRegisterModalOpen(true);
+  };
 
   return {
     hotels,
@@ -165,6 +222,7 @@ export const useHotelCatalog = () => {
     
     isRegisterModalOpen,
     setIsRegisterModalOpen,
+    handleOpenRegisterModal,
     detailModalHotelId,
     setDetailModalHotelId,
     hotelDetail,
@@ -191,6 +249,7 @@ export const useHotelCatalog = () => {
     handleRegister,
     handleSubmitRegistration,
     handleUpdateBasicInfo,
-    openEditModal
+    openEditModal,
+    fieldErrors
   };
 };

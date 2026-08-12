@@ -8,6 +8,7 @@ const Login: React.FC = () => {
   const {
     activeTab, setActiveTab,
     error,
+    fieldErrors,
     isSubmitting,
     loginData,
     regUserData,
@@ -43,18 +44,21 @@ const Login: React.FC = () => {
 
           <div className="flex justify-between border-b border-white/20 relative">
             <button
+              type="button"
               onClick={() => setActiveTab(0)}
               className={`pb-3 w-1/3 text-center font-medium transition-colors ${activeTab === 0 ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
             >
               Đăng nhập
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab(1)}
               className={`pb-3 w-1/3 text-center font-medium transition-colors ${activeTab === 1 ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
             >
               Đăng ký người dùng
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab(2)}
               className={`pb-3 w-1/3 text-center font-medium transition-colors ${activeTab === 2 ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
             >
@@ -85,15 +89,15 @@ const Login: React.FC = () => {
 
             {/* --- PANEL 1: ĐĂNG NHẬP --- */}
             <div className="w-1/3 p-6 h-full overflow-y-auto custom-scrollbar">
-              <form onSubmit={handleLoginSubmit} className="space-y-4 max-w-sm mx-auto mt-4">
+              <form onSubmit={handleLoginSubmit} noValidate className="space-y-4 max-w-sm mx-auto mt-4">
                 <Input
-                  label="Email hoặc Tài khoản"
+                  label="Email"
                   type="text"
                   variant="glass"
                   value={loginData.loginEmail}
                   onChange={(e) => loginData.setLoginEmail(e.target.value)}
-                  required
                   placeholder="Nhập email..."
+                  error={fieldErrors.loginEmail}
                 />
                 <Input
                   label="Mật khẩu"
@@ -101,12 +105,12 @@ const Login: React.FC = () => {
                   variant="glass"
                   value={loginData.loginPassword}
                   onChange={(e) => loginData.setLoginPassword(e.target.value)}
-                  required
                   placeholder="••••••••"
+                  error={fieldErrors.loginPassword}
                 />
-                
-                <Button 
-                  type="submit" 
+
+                <Button
+                  type="submit"
                   isLoading={isSubmitting}
                   className="w-full mt-8 !bg-white !text-slate-900 hover:!bg-slate-100"
                 >
@@ -117,14 +121,14 @@ const Login: React.FC = () => {
 
             {/* --- PANEL 2: ĐĂNG KÝ USER/ADMIN --- */}
             <div className="w-1/3 p-6 h-full overflow-y-auto custom-scrollbar">
-              <form onSubmit={handleRegisterUserSubmit} className="space-y-4 max-w-sm mx-auto mt-4">
+              <form onSubmit={handleRegisterUserSubmit} noValidate className="space-y-4 max-w-sm mx-auto mt-4">
                 <Input
                   label="Email"
-                  type="email"
+                  type="text"
                   variant="glass"
                   value={regUserData.regUserEmail}
                   onChange={(e) => regUserData.setRegUserEmail(e.target.value)}
-                  required
+                  error={fieldErrors.regUserEmail}
                 />
                 <Input
                   label="Mật khẩu"
@@ -132,7 +136,7 @@ const Login: React.FC = () => {
                   variant="glass"
                   value={regUserData.regUserPassword}
                   onChange={(e) => regUserData.setRegUserPassword(e.target.value)}
-                  required
+                  error={fieldErrors.regUserPassword}
                 />
                 <Input
                   label="Xác nhận mật khẩu"
@@ -140,11 +144,11 @@ const Login: React.FC = () => {
                   variant="glass"
                   value={regUserData.regUserConfirm}
                   onChange={(e) => regUserData.setRegUserConfirm(e.target.value)}
-                  required
+                  error={fieldErrors.regUserConfirm}
                 />
-                
-                <Button 
-                  type="submit" 
+
+                <Button
+                  type="submit"
                   isLoading={isSubmitting}
                   className="w-full mt-8 !bg-white !text-slate-900 hover:!bg-slate-100"
                 >
@@ -155,7 +159,7 @@ const Login: React.FC = () => {
 
             {/* --- PANEL 3: ĐĂNG KÝ DOANH NGHIỆP --- */}
             <div className="w-1/3 p-6 h-full overflow-y-auto custom-scrollbar">
-              <form onSubmit={handleRegisterBizSubmit} className="space-y-5 mt-2">
+              <form onSubmit={handleRegisterBizSubmit} noValidate className="space-y-5 mt-2">
                 <h3 className="font-semibold text-white/90 border-b border-white/20 pb-2">1. Thông tin pháp lý & Doanh nghiệp</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
@@ -163,14 +167,14 @@ const Login: React.FC = () => {
                     variant="glass"
                     value={regBizData.bizName}
                     onChange={(e) => regBizData.setBizName(e.target.value)}
-                    required
+                    error={fieldErrors.bizName}
                   />
                   <Input
                     label="Mã số thuế"
                     variant="glass"
                     value={regBizData.bizTaxCode}
                     onChange={(e) => regBizData.setBizTaxCode(e.target.value)}
-                    required
+                    error={fieldErrors.bizTaxCode}
                   />
                   <Input
                     label="Địa chỉ đăng ký kinh doanh"
@@ -178,7 +182,7 @@ const Login: React.FC = () => {
                     className="sm:col-span-2"
                     value={regBizData.bizAddress}
                     onChange={(e) => regBizData.setBizAddress(e.target.value)}
-                    required
+                    error={fieldErrors.bizAddress}
                   />
                 </div>
 
@@ -189,32 +193,30 @@ const Login: React.FC = () => {
                     variant="glass"
                     value={regBizData.repName}
                     onChange={(e) => regBizData.setRepName(e.target.value)}
-                    required
+                    error={fieldErrors.repName}
                   />
                   <Input
                     label="Chức vụ"
                     variant="glass"
                     value={regBizData.repPosition}
                     onChange={(e) => regBizData.setRepPosition(e.target.value)}
-                    required
+                    error={fieldErrors.repPosition}
                   />
                   <Input
                     label="Số điện thoại"
-                    type="tel"
+                    type="text"
                     variant="glass"
-                    pattern="[0-9]{10,11}"
-                    title="Số điện thoại phải gồm 10 đến 11 chữ số"
                     value={regBizData.repPhone}
                     onChange={(e) => regBizData.setRepPhone(e.target.value)}
-                    required
+                    error={fieldErrors.repPhone}
                   />
                   <Input
                     label="Email làm việc"
-                    type="email"
+                    type="text"
                     variant="glass"
                     value={regBizData.repEmail}
                     onChange={(e) => regBizData.setRepEmail(e.target.value)}
-                    required
+                    error={fieldErrors.repEmail}
                   />
                 </div>
 
@@ -226,7 +228,7 @@ const Login: React.FC = () => {
                     variant="glass"
                     value={regBizData.bizPassword}
                     onChange={(e) => regBizData.setBizPassword(e.target.value)}
-                    required
+                    error={fieldErrors.bizPassword}
                   />
                   <Input
                     label="Xác nhận mật khẩu"
@@ -234,12 +236,12 @@ const Login: React.FC = () => {
                     variant="glass"
                     value={regBizData.bizConfirm}
                     onChange={(e) => regBizData.setBizConfirm(e.target.value)}
-                    required
+                    error={fieldErrors.bizConfirm}
                   />
                 </div>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   isLoading={isSubmitting}
                   className="w-full mt-4 !bg-teal-500 hover:!bg-teal-600 !text-white"
                 >

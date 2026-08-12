@@ -33,7 +33,8 @@ const RoomTypeManagement: React.FC = () => {
     handleRestore,
     handleUploadRoomImage,
     handleDeleteRoomImage,
-    toggleFormAmenity
+    toggleFormAmenity,
+    fieldErrors
   } = useRoomTypeManagement();
 
   if (loading && roomTypes.length === 0) return <div className="flex items-center justify-center h-64 text-slate-400 text-sm">Đang tải dữ liệu...</div>;
@@ -202,15 +203,15 @@ const RoomTypeManagement: React.FC = () => {
       >
         <div className="space-y-8">
           {/* Form Info */}
-          <form id="rt-form" onSubmit={handleSubmit} className="space-y-5">
+          <form id="rt-form" onSubmit={handleSubmit} noValidate className="space-y-5">
             <div className="space-y-1">
               <Input
                 label="Tên loại phòng"
                 type="text"
-                required
                 value={form.name}
                 onChange={e => setForm({ ...form, name: e.target.value })}
                 placeholder="VD: Phòng Deluxe Giường Đôi"
+                error={fieldErrors?.name}
               />
             </div>
 
@@ -219,20 +220,20 @@ const RoomTypeManagement: React.FC = () => {
                 <Input
                   label="Giá cơ bản (VNĐ/đêm)"
                   type="number"
-                  required
                   min={0}
                   value={form.basePrice}
                   onChange={e => setForm({ ...form, basePrice: Number(e.target.value) })}
+                  error={fieldErrors?.basePrice}
                 />
               </div>
               <div className="space-y-1">
                 <Input
                   label="Tổng số phòng (Inventory)"
                   type="number"
-                  required
                   min={1}
                   value={form.totalRooms}
                   onChange={e => setForm({ ...form, totalRooms: Number(e.target.value) })}
+                  error={fieldErrors?.totalRooms}
                 />
               </div>
             </div>
@@ -242,20 +243,20 @@ const RoomTypeManagement: React.FC = () => {
                 <Input
                   label="Số người lớn tối đa"
                   type="number"
-                  required
                   min={1}
                   value={form.maxAdults}
                   onChange={e => setForm({ ...form, maxAdults: Number(e.target.value) })}
+                  error={fieldErrors?.maxAdults}
                 />
               </div>
               <div className="space-y-1">
                 <Input
                   label="Số trẻ em tối đa"
                   type="number"
-                  required
                   min={0}
                   value={form.maxChildren}
                   onChange={e => setForm({ ...form, maxChildren: Number(e.target.value) })}
+                  error={fieldErrors?.maxChildren}
                 />
               </div>
             </div>

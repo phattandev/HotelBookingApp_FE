@@ -5,6 +5,7 @@ import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import toast from 'react-hot-toast';
 import api from '../services/api';
+import { toSentenceCase, isValidName } from '../utils/formatters';
 import { useNavigate } from 'react-router-dom';
 
 interface SelectedRoom {
@@ -34,6 +35,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     guestName: '',
     guestPhone: '',
@@ -46,8 +48,54 @@ const BookingModal: React.FC<BookingModalProps> = ({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
+
+    let hasError = false;
+    const errors: Record<string, string> = {};
+
+    if (!formData.guestName.trim()) {
+      errors.guestName = 'Họ và tên không được để trống';
+      hasError = true;
+    } else if (formData.guestName.trim().length < 2 || formData.guestName.trim().length > 100) {
+      errors.guestName = 'Họ và tên phải từ 2 đến 100 ký tự';
+      hasError = true;
+    } else if (!isValidName(formData.guestName.trim())) {
+      errors.guestName = 'Họ và tên không được chứa số hoặc ký tự đặc biệt';
+      hasError = true;
+    }
+
+    if (!formData.guestPhone) {
+      errors.guestPhone = 'Số điện thoại không được để trống';
+      hasError = true;
+    } else if (!/^[0-9]+$/.test(formData.guestPhone)) {
+      // Bắt lỗi nếu có bất kỳ ký tự nào không phải là số từ 0-9
+      errors.guestPhone = 'Số điện thoại chỉ được nhập số, không được chứa chữ hoặc ký tự đặc biệt';
+      hasError = true;
+    } else if (formData.guestPhone.length < 10 || formData.guestPhone.length > 11) {
+      // Kiểm tra độ dài sau khi đã chắc chắn nó chỉ chứa số
+      errors.guestPhone = 'Số điện thoại phải gồm 10 đến 11 chữ số';
+      hasError = true;
+    }
+
+    if (!formData.guestEmail) {
+      errors.guestEmail = 'Email không được để trống';
+      hasError = true;
+    } else if (!isValidEmail(formData.guestEmail)) {
+      errors.guestEmail = 'Email không đúng định dạng';
+      hasError = true;
+    }
+
+    if (hasError) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
@@ -56,9 +104,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
         checkOutDate: checkOut,
         numAdults: adults,
         numChildren: children,
-        guestName: formData.guestName,
-        guestPhone: formData.guestPhone,
-        guestEmail: formData.guestEmail,
+        guestName: toSentenceCase(formData.guestName.trim()),
+        guestPhone: formData.guestPhone.trim(),
+        guestEmail: formData.guestEmail.trim(),
         specialRequests: formData.specialRequests,
         items: selectedRooms.map(r => ({
           roomTypeId: r.roomTypeId,
@@ -77,7 +125,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onClose={!loading ? onClose : () => {}} className="relative z-50">
+    <Dialog open={isOpen} onClose={!loading ? onClose : () => { }} className="relative z-50">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="w-full max-w-4xl bg-gray-50 rounded-2xl shadow-xl overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh]">
@@ -101,7 +149,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
             <div className="grid md:grid-cols-2 gap-8">
-              
+
               {/* Cột trái: Form thông tin */}
               <div className="space-y-6">
                 <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
@@ -109,31 +157,32 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">1</span>
                     Thông tin liên hệ
                   </h3>
-                  <form id="booking-form" onSubmit={handleSubmit} className="space-y-4">
+                  <form id="booking-form" onSubmit={handleSubmit} noValidate className="space-y-4">
                     <Input
                       label="Họ và tên"
                       name="guestName"
-                      required
                       value={formData.guestName}
                       onChange={handleChange}
                       placeholder="Nhập họ tên người nhận phòng"
+                      error={fieldErrors.guestName}
                     />
                     <Input
                       label="Số điện thoại"
                       name="guestPhone"
-                      required
+                      type="text"
                       value={formData.guestPhone}
                       onChange={handleChange}
                       placeholder="Nhập số điện thoại"
+                      error={fieldErrors.guestPhone}
                     />
                     <Input
                       label="Email"
-                      type="email"
+                      type="text"
                       name="guestEmail"
-                      required
                       value={formData.guestEmail}
                       onChange={handleChange}
                       placeholder="Nhập địa chỉ email"
+                      error={fieldErrors.guestEmail}
                     />
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -149,7 +198,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                           onChange={handleChange}
                           rows={3}
                           className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
-                          placeholder="Ví dụ: Phòng tầng cao, nhận phòng sớm..."
+                          placeholder="Ví dụ: Phòng view biển, checkin sớm..."
                         />
                       </div>
                     </div>
@@ -160,11 +209,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
               {/* Cột phải: Tóm tắt đơn hàng */}
               <div className="space-y-6">
                 <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                   <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">2</span>
                     Chi tiết đặt phòng
                   </h3>
-                  
+
                   <div className="space-y-4">
                     <div className="flex gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
                       <div className="flex-1">
@@ -173,7 +222,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       </div>
                       <div className="w-px bg-gray-300"></div>
                       <div className="flex-1">
-                         <p className="text-xs text-gray-500 font-medium">TRẢ PHÒNG</p>
+                        <p className="text-xs text-gray-500 font-medium">TRẢ PHÒNG</p>
                         <p className="font-bold text-gray-900">{new Date(checkOut).toLocaleDateString('vi-VN')}</p>
                       </div>
                     </div>
@@ -182,7 +231,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       <span className="text-gray-600">Thời gian lưu trú:</span>
                       <span className="font-medium">{numNights} đêm</span>
                     </div>
-                    
+
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-gray-600">Số lượng khách:</span>
                       <span className="font-medium">{adults} người lớn, {children} trẻ em</span>
@@ -211,11 +260,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   <div className="flex justify-between items-end mb-2">
                     <span className="font-bold text-gray-800">Tổng cộng</span>
                     <div className="text-right">
-                       <span className="block text-2xl font-black text-indigo-600">{totalPrice.toLocaleString('vi-VN')}₫</span>
-                       <span className="text-xs text-indigo-500">Đã bao gồm thuế và phí</span>
+                      <span className="block text-2xl font-black text-indigo-600">{totalPrice.toLocaleString('vi-VN')}₫</span>
+                      <span className="text-xs text-indigo-500">Đã bao gồm thuế và phí</span>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-2 mt-4 text-xs text-indigo-700 bg-white/50 p-3 rounded-lg">
                     <FaInfoCircle className="mt-0.5 shrink-0" />
                     <p>Bạn sẽ thanh toán tiền cọc theo chính sách của khách sạn sau khi đơn đặt phòng được xác nhận.</p>
@@ -228,12 +277,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
           {/* Footer */}
           <div className="p-4 bg-white border-t border-gray-100 shrink-0 flex justify-end gap-3">
-             <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
-               Hủy
-             </Button>
-             <Button type="submit" form="booking-form" isLoading={loading} className="px-8 bg-indigo-600 hover:bg-indigo-700">
-               Xác nhận đặt phòng
-             </Button>
+            <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
+              Hủy
+            </Button>
+            <Button type="submit" form="booking-form" isLoading={loading} className="px-8 bg-indigo-600 hover:bg-indigo-700">
+              Xác nhận đặt phòng
+            </Button>
           </div>
         </Dialog.Panel>
       </div>
