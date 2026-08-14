@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { toSentenceCase, isValidTaxCode, isValidPhone, isValidName } from '../utils/formatters';
+import { toSentenceCase, isValidTaxCode, isValidPhone, isValidName, extractErrorMessage } from '../utils/formatters';
 
 export const useLogin = () => {
   const { login, registerUser, registerBusiness } = useAuth();
@@ -66,14 +66,8 @@ export const useLogin = () => {
     setIsSubmitting(true);
     try {
       await login({ usernameOrEmail: loginEmail, password: loginPassword });
-    } catch (err: any) {
-      const responseData = err.response?.data;
-      const validationErrors = responseData?.Errors || responseData?.errors;
-      if (validationErrors && validationErrors.length > 0) {
-        setError(validationErrors.join('\n'));
-      } else {
-        setError(responseData?.Message || responseData?.message || 'Đăng nhập thất bại.');
-      }
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err, 'Đăng nhập thất bại.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -123,14 +117,8 @@ export const useLogin = () => {
       toast.success('Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.');
       setActiveTab(0);
       setRegUserEmail(''); setRegUserPassword(''); setRegUserConfirm('');
-    } catch (err: any) {
-      const responseData = err.response?.data;
-      const validationErrors = responseData?.Errors || responseData?.errors;
-      if (validationErrors && validationErrors.length > 0) {
-        setError(validationErrors.join('\n'));
-      } else {
-        setError(responseData?.Message || responseData?.message || 'Đăng ký thất bại.');
-      }
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err, 'Đăng ký thất bại.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -222,14 +210,8 @@ export const useLogin = () => {
       });
       toast.success('Đăng ký doanh nghiệp thành công! Vui lòng chờ Admin phê duyệt tài khoản.');
       setActiveTab(0);
-    } catch (err: any) {
-      const responseData = err.response?.data;
-      const validationErrors = responseData?.Errors || responseData?.errors;
-      if (validationErrors && validationErrors.length > 0) {
-        setError(validationErrors.join('\n'));
-      } else {
-        setError(responseData?.Message || responseData?.message || 'Đăng ký doanh nghiệp thất bại.');
-      }
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err, 'Đăng ký doanh nghiệp thất bại.'));
     } finally {
       setIsSubmitting(false);
     }

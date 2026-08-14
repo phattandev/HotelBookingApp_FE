@@ -44,3 +44,15 @@ export const isValidName = (name: string): boolean => {
   const regex = /^[\p{L}\s]+$/u;
   return regex.test(name);
 };
+
+/**
+ * Trích xuất message lỗi từ Axios error hoặc lỗi JS.
+ * Ưu tiên: Errors[] > Message > fallback
+ */
+export function extractErrorMessage(err: unknown, fallback = 'Có lỗi xảy ra.'): string {
+  const data = (err as any)?.response?.data;
+  if (data?.Errors?.length > 0) return (data.Errors as string[]).join('\n');
+  if (data?.Message) return data.Message as string;
+  if (err instanceof Error) return err.message;
+  return fallback;
+}

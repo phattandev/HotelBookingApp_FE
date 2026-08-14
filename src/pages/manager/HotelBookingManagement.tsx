@@ -181,7 +181,7 @@ const HotelBookingManagement: React.FC = () => {
               </div>
             )}
             {canExtend && (
-              <Button size="sm" variant="info" onClick={() => setExtendModal(b)} className="w-full">
+              <Button size="sm" variant="primary" onClick={() => setExtendModal(b)} className="w-full">
                 Gia hạn
               </Button>
             )}

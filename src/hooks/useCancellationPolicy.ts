@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { extractErrorMessage } from '../utils/formatters';
 
 export interface CancellationPolicy {
   id: string;
@@ -37,8 +38,8 @@ export const useCancellationPolicy = () => {
         setPenalty(data.penaltyPercentage);
         setIsActive(data.isActive);
       }
-    } catch {
-      toast.error('Không thể tải chính sách hủy phòng.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Không thể tải chính sách hủy phòng.'));
     } finally {
       setLoading(false);
     }
@@ -72,12 +73,12 @@ export const useCancellationPolicy = () => {
       }
       setIsEditing(false);
       await fetchPolicy();
-    } catch (err: any) {
-      toast.error(err.response?.data?.Message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Đã xảy ra lỗi. Vui lòng thử lại.'));
     } finally {
       setSubmitting(false);
     }
-  };
+  };[]
 
   return {
     policy,

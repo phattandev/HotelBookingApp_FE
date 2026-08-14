@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import { useConfirm } from '../components/ConfirmModal';
 import toast from 'react-hot-toast';
+import { extractErrorMessage } from '../utils/formatters';
 
 export interface HotelImage { id: string; url: string; publicId: string; isPrimary: boolean; displayOrder: number; }
 export interface AmenityItem { id: string; name: string; categoryName: string; applicableTo: string; }
@@ -45,8 +46,8 @@ export const useHotelInfo = () => {
       
       const fetchedAmenities: AmenityItem[] = amenitiesRes.data.data || [];
       setAllAmenities(fetchedAmenities.filter(a => a.applicableTo === 'hotel'));
-    } catch {
-      setMsg({ type: 'error', text: 'Không thể tải thông tin khách sạn.' });
+    } catch (err: unknown) {
+      setMsg({ type: 'error', text: extractErrorMessage(err, 'Không thể tải thông tin khách sạn.') });
     } finally {
       setLoading(false);
     }
@@ -68,8 +69,8 @@ export const useHotelInfo = () => {
       ]);
       setMsg({ type: 'success', text: 'Đã lưu mô tả và tiện nghi thành công!' });
       fetchData();
-    } catch {
-      setMsg({ type: 'error', text: 'Lỗi khi lưu thông tin. Vui lòng thử lại.' });
+    } catch (err: unknown) {
+      setMsg({ type: 'error', text: extractErrorMessage(err, 'Lỗi khi lưu thông tin. Vui lòng thử lại.') });
     } finally {
       setSaving(false);
     }
@@ -89,8 +90,8 @@ export const useHotelInfo = () => {
       }
       toast.success(`Upload ${files.length > 1 ? files.length + ' ảnh' : '1 ảnh'} thành công!`);
       fetchData();
-    } catch {
-      toast.error('Upload ảnh thất bại.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Upload ảnh thất bại.'));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -109,8 +110,8 @@ export const useHotelInfo = () => {
       await api.delete(`/manager/images/hotel/${imageId}`);
       toast.success('Đã xóa ảnh.');
       fetchData();
-    } catch {
-      toast.error('Xóa ảnh thất bại.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Xóa ảnh thất bại.'));
     }
   }, [confirm, fetchData]);
 

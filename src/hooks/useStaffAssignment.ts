@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../components/ConfirmModal';
+import { extractErrorMessage } from '../utils/formatters';
 
 export interface Staff {
   id: string;
@@ -61,8 +62,8 @@ export const useStaffAssignment = () => {
       if (!selectedHotelId && allHotels.length > 0) {
         setSelectedHotelId(allHotels[0].id);
       }
-    } catch {
-      toast.error('Không thể tải dữ liệu nhân sự.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Không thể tải dữ liệu nhân sự.'));
     } finally {
       setLoading(false);
     }
@@ -108,8 +109,8 @@ export const useStaffAssignment = () => {
       });
       await fetchStaffData();
       toast.success('Phân công nhân viên thành công!');
-    } catch (err: any) {
-      toast.error(err.response?.data?.Message || 'Phân công thất bại');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Phân công thất bại'));
     } finally {
       setProcessingId(null);
     }
@@ -128,8 +129,8 @@ export const useStaffAssignment = () => {
       await api.delete(`/StaffAssignment/${staffId}`);
       await fetchStaffData();
       toast.success('Hủy phân công thành công!');
-    } catch (err: any) {
-      toast.error(err.response?.data?.Message || 'Hủy phân công thất bại');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Hủy phân công thất bại'));
     } finally {
       setProcessingId(null);
     }

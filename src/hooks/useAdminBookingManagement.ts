@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { extractErrorMessage } from '../utils/formatters';
 
 // ── Types ──
 export interface BookingRoomItem {
@@ -188,8 +189,8 @@ export const useAdminBookingManagement = () => {
       const res = await api.get('/admin/filter-options');
       setBusinesses(res.data.businesses || []);
       setHotels(res.data.hotels || []);
-    } catch {
-      toast.error('Không thể tải danh sách lọc.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Không thể tải danh sách lọc.'));
     }
   }, []);
 
@@ -209,8 +210,8 @@ export const useAdminBookingManagement = () => {
 
       const res = await api.get('/admin/booking-stats', { params });
       setStats(res.data.data || null);
-    } catch {
-      toast.error('Không thể tải thống kê đặt phòng.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Không thể tải thống kê đặt phòng.'));
     } finally {
       setLoading(false);
     }

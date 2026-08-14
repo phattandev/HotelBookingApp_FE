@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, useMemo } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../components/ConfirmModal';
+import { extractErrorMessage } from '../utils/formatters';
 
 export interface BookingRoomItem {
   roomTypeId: string;
@@ -80,8 +81,8 @@ export const useHotelBookingManagement = () => {
       if (activeFilter) params.status = activeFilter;
       const res = await api.get('/manager/bookings', { params });
       setBookings(res.data.data || []);
-    } catch {
-      toast.error('Lỗi khi tải danh sách đơn đặt phòng');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Lỗi khi tải danh sách đơn đặt phòng'));
       setBookings([]);
     } finally {
       setLoading(false);
@@ -125,9 +126,8 @@ export const useHotelBookingManagement = () => {
       await api.put(`/manager/bookings/${bookingId}/status`, { action: 'approve' });
       toast.success('Đã duyệt đơn. Hệ thống đã gửi yêu cầu cọc cho khách.');
       fetchBookings();
-    } catch (e: unknown) {
-      const err = e as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Thao tác thất bại.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Thao tác thất bại.'));
     } finally {
       setProcessing(false);
     }
@@ -150,9 +150,8 @@ export const useHotelBookingManagement = () => {
       toast.success('Đã từ chối đơn đặt phòng.');
       setRejectModal(null);
       fetchBookings();
-    } catch (e: unknown) {
-      const err = e as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Thao tác thất bại.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Thao tác thất bại.'));
     } finally {
       setProcessing(false);
     }
@@ -162,9 +161,8 @@ export const useHotelBookingManagement = () => {
     try {
       const res = await api.post(`/manager/bookings/${bookingId}/extension-availability`, { newCheckOutDate, items });
       return res.data.data;
-    } catch (e: unknown) {
-      const err = e as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Lỗi khi kiểm tra phòng trống.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Lỗi khi kiểm tra phòng trống.'));
       return null;
     }
   };
@@ -176,9 +174,8 @@ export const useHotelBookingManagement = () => {
       toast.success('Gia hạn phòng thành công.');
       setExtendModal(null);
       fetchBookings();
-    } catch (e: unknown) {
-      const err = e as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Gia hạn thất bại.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Gia hạn thất bại.'));
     } finally {
       setProcessing(false);
     }
