@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { setTokens, clearTokens, getTokens } from '../utils/token';
-import type { LoginRequest, RegisterUserRequest, RegisterBusinessRequest, ApiResponse, AuthResponse } from '../types/auth.types';
+import type { LoginRequest, RegisterUserRequest, ApiResponse, AuthResponse } from '../types/auth.types';
 
 export interface User {
   Id: string;
@@ -17,7 +17,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
   registerUser: (data: RegisterUserRequest) => Promise<void>;
-  registerBusiness: (data: RegisterBusinessRequest) => Promise<void>;
+  registerBusiness: (data: FormData) => Promise<void>;
   logout: () => void;
 }
 
@@ -108,8 +108,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Hàm Đăng ký Doanh nghiệp
-  const registerBusiness = async (data: RegisterBusinessRequest) => {
-    await api.post<ApiResponse<string>>('/auth/register/business', data);
+  const registerBusiness = async (data: FormData) => {
+    await api.post<ApiResponse<string>>('/auth/register/business', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     // Không gọi handleAuthResponse nữa vì API chỉ trả về chuỗi thành công, tài khoản cần chờ duyệt.
   };
 

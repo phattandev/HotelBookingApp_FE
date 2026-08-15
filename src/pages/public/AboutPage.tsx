@@ -6,13 +6,13 @@ const TEAM = [
     name: 'Nguyễn Văn An',
     role: 'Founder & CEO',
     avatar: 'https://ui-avatars.com/api/?name=Nguyen+Van+An&background=6366f1&color=fff&size=128',
-    desc: 'Với hơn 10 năm kinh nghiệm trong ngành du lịch và công nghệ, An đã xây dựng StayNow từ tầm nhìn đơn giản: đặt phòng khách sạn phải dễ như nhắn tin.',
+    desc: 'Với hơn 10 năm kinh nghiệm trong ngành du lịch và công nghệ, An đã xây dựng BookNow từ tầm nhìn đơn giản: đặt phòng khách sạn phải dễ như nhắn tin.',
   },
   {
     name: 'Trần Thị Minh',
     role: 'CTO',
     avatar: 'https://ui-avatars.com/api/?name=Tran+Thi+Minh&background=8b5cf6&color=fff&size=128',
-    desc: 'Kỹ sư phần mềm với bề dày tại các công ty công nghệ hàng đầu. Minh chịu trách nhiệm xây dựng nền tảng kỹ thuật vững chắc và bảo mật của StayNow.',
+    desc: 'Kỹ sư phần mềm với bề dày tại các công ty công nghệ hàng đầu. Minh chịu trách nhiệm xây dựng nền tảng kỹ thuật vững chắc và bảo mật của BookNow.',
   },
   {
     name: 'Lê Hoàng Nam',
@@ -86,7 +86,7 @@ const AboutPage: React.FC = () => {
             <span className="text-indigo-300">du khách & khách sạn</span>
           </h1>
           <p className="text-lg sm:text-xl text-indigo-200 max-w-2xl mx-auto leading-relaxed">
-            StayNow ra đời từ niềm tin rằng mỗi chuyến đi đều xứng đáng được bắt đầu bằng một trải nghiệm đặt phòng hoàn hảo — đơn giản, an toàn và đáng tin cậy.
+            BookNow ra đời từ niềm tin rằng mỗi chuyến đi đều xứng đáng được bắt đầu bằng một trải nghiệm đặt phòng hoàn hảo — đơn giản, an toàn và đáng tin cậy.
           </p>
         </div>
       </section>
@@ -115,13 +115,13 @@ const AboutPage: React.FC = () => {
             </h2>
             <div className="space-y-4 text-slate-600 leading-relaxed">
               <p>
-                StayNow được thành lập năm 2024 với một mục tiêu rõ ràng: xây dựng nền tảng kết nối khách sạn và du khách tốt nhất Việt Nam, dựa trên sự tin tưởng và minh bạch.
+                BookNow được thành lập năm 2024 với một mục tiêu rõ ràng: xây dựng nền tảng kết nối khách sạn và du khách tốt nhất Việt Nam, dựa trên sự tin tưởng và minh bạch.
               </p>
               <p>
                 Chúng tôi tin rằng du lịch không chỉ là di chuyển từ điểm A đến điểm B — đó là những kỷ niệm được tạo ra, những câu chuyện được kể lại. Và một nơi lưu trú tốt là nền tảng cho mọi chuyến đi đáng nhớ.
               </p>
               <p>
-                Từ resort 5 sao ven biển đến homestay bình dân giữa lòng phố cổ — StayNow mang đến mọi lựa chọn, với mức giá minh bạch và quy trình đặt phòng đơn giản đến mức ai cũng làm được.
+                Từ resort 5 sao ven biển đến homestay bình dân giữa lòng phố cổ — BookNow mang đến mọi lựa chọn, với mức giá minh bạch và quy trình đặt phòng đơn giản đến mức ai cũng làm được.
               </p>
             </div>
             <Link
@@ -180,7 +180,7 @@ const AboutPage: React.FC = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-14">
           <span className="text-indigo-600 text-sm font-semibold uppercase tracking-wider">Đội ngũ</span>
-          <h2 className="text-3xl font-bold text-slate-900 mt-3">Những người đứng sau StayNow</h2>
+          <h2 className="text-3xl font-bold text-slate-900 mt-3">Những người đứng sau BookNow</h2>
           <p className="text-slate-500 mt-3 max-w-xl mx-auto">Một đội ngũ nhỏ, đam mê lớn — cùng nhau tạo ra sản phẩm mà triệu du khách Việt tin dùng.</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -203,7 +203,7 @@ const AboutPage: React.FC = () => {
       <section className="bg-gradient-to-r from-indigo-600 to-purple-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center text-white">
           <h2 className="text-3xl font-bold mb-4">Sẵn sàng bắt đầu chuyến đi?</h2>
-          <p className="text-indigo-200 mb-8 max-w-xl mx-auto">Hàng nghìn khách sạn đang chờ bạn khám phá. Đặt phòng ngay hôm nay với StayNow.</p>
+          <p className="text-indigo-200 mb-8 max-w-xl mx-auto">Hàng nghìn khách sạn đang chờ bạn khám phá. Đặt phòng ngay hôm nay với BookNow.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               to="/hotels"

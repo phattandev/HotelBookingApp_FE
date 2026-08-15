@@ -13,6 +13,7 @@ const Header: React.FC = () => {
     { to: '/hotels', label: 'Khám phá' },
     { to: '/about', label: 'Giới thiệu' },
     { to: '/contact', label: 'Liên hệ' },
+    { to: '/register-partner', label: 'Đăng ký đối tác' },
   ];
 
   const roleLink = () => {
@@ -36,7 +37,7 @@ const Header: React.FC = () => {
               <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
             </svg>
           </div>
-          <span className="font-bold text-slate-900 text-lg tracking-tight">StayNow</span>
+          <span className="font-bold text-slate-900 text-lg tracking-tight">BookNow</span>
         </Link>
 
         {/* Nav links */}

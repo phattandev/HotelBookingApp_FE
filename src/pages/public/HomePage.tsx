@@ -248,7 +248,7 @@ const HomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
             <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-1">Ưu điểm</p>
-            <h2 className="text-2xl font-bold text-slate-900">Tại sao chọn StayNow?</h2>
+            <h2 className="text-2xl font-bold text-slate-900">Tại sao chọn BookNow?</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {FEATURES.map((f, i) => (
@@ -272,7 +272,7 @@ const HomePage: React.FC = () => {
             <div className="text-white">
               <h2 className="text-2xl font-bold">Bạn là chủ khách sạn?</h2>
               <p className="mt-2 text-indigo-100 max-w-md">
-                Đăng ký trở thành đối tác của StayNow — tiếp cận hàng triệu du khách trên toàn quốc, quản lý đặt phòng dễ dàng.
+                Đăng ký trở thành đối tác của BookNow — tiếp cận hàng triệu du khách trên toàn quốc, quản lý đặt phòng dễ dàng.
               </p>
             </div>
             <div className="mt-6 md:mt-0 shrink-0">

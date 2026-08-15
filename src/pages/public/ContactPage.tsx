@@ -38,7 +38,7 @@ const CONTACT_INFO = [
       </svg>
     ),
     title: 'Email',
-    lines: ['Hỗ trợ: support@staynow.vn', 'Hợp tác: partner@staynow.vn', 'Phản hồi trong vòng 4 giờ'],
+    lines: ['Hỗ trợ: support@BookNow.vn', 'Hợp tác: partner@BookNow.vn', 'Phản hồi trong vòng 4 giờ'],
     color: 'bg-purple-50 text-purple-600',
   },
 ];
@@ -55,7 +55,7 @@ const SUBJECTS = [
 
 const FAQ = [
   {
-    q: 'Làm thế nào để đặt phòng trên StayNow?',
+    q: 'Làm thế nào để đặt phòng trên BookNow?',
     a: 'Tìm kiếm khách sạn theo địa điểm và ngày → Chọn loại phòng phù hợp → Điền thông tin khách → Xác nhận đặt. Sau khi quản lý duyệt, bạn sẽ nhận email yêu cầu thanh toán cọc qua VNPay.',
   },
   {
@@ -63,12 +63,12 @@ const FAQ = [
     a: 'Chính sách hủy phòng khác nhau tùy từng khách sạn và được hiển thị rõ trước khi đặt. Thông thường hủy trước ngày check-in theo quy định sẽ được hoàn cọc 100%.',
   },
   {
-    q: 'Tôi có thể đăng ký khách sạn của mình lên StayNow không?',
+    q: 'Tôi có thể đăng ký khách sạn của mình lên BookNow không?',
     a: 'Có! Đăng ký tài khoản Partner, điền thông tin doanh nghiệp và chờ đội ngũ chúng tôi xét duyệt (thường trong 1-2 ngày làm việc). Sau khi được chấp thuận, bạn có thể đăng tải khách sạn ngay.',
   },
   {
-    q: 'Thanh toán qua StayNow có an toàn không?',
-    a: 'Hoàn toàn an toàn. Chúng tôi tích hợp cổng thanh toán VNPay với mã hóa 256-bit. Thông tin thẻ của bạn không bao giờ được lưu trên hệ thống StayNow.',
+    q: 'Thanh toán qua BookNow có an toàn không?',
+    a: 'Hoàn toàn an toàn. Chúng tôi tích hợp cổng thanh toán VNPay với mã hóa 256-bit. Thông tin thẻ của bạn không bao giờ được lưu trên hệ thống BookNow.',
   },
 ];
 
@@ -134,7 +134,7 @@ const ContactPage: React.FC = () => {
           </span>
           <h1 className="text-4xl sm:text-5xl font-bold mb-4">Chúng tôi luôn sẵn sàng hỗ trợ</h1>
           <p className="text-indigo-200 text-lg max-w-xl mx-auto">
-            Có câu hỏi hay cần hỗ trợ? Đội ngũ StayNow sẽ phản hồi bạn trong vòng 4 giờ làm việc.
+            Có câu hỏi hay cần hỗ trợ? Đội ngũ BookNow sẽ phản hồi bạn trong vòng 4 giờ làm việc.
           </p>
         </div>
         {/* Contact cards bên trong hero */}
@@ -325,7 +325,7 @@ const ContactPage: React.FC = () => {
             {/* Social links */}
             <div className="mt-10 p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100">
               <h3 className="font-bold text-slate-900 mb-1">Theo dõi chúng tôi</h3>
-              <p className="text-sm text-slate-500 mb-4">Cập nhật ưu đãi và tin tức mới nhất từ StayNow.</p>
+              <p className="text-sm text-slate-500 mb-4">Cập nhật ưu đãi và tin tức mới nhất từ BookNow.</p>
               <div className="flex gap-3">
                 {[
                   { name: 'Facebook', bg: 'bg-blue-600', icon: 'f' },
