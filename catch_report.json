@@ -1,0 +1,172 @@
+[
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\components\\ProfileForm.tsx",
+    "line": 54,
+    "content": "catch (err: any) {\r\n      toast.error('Không thể tải thông tin hồ sơ.');\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useAdminBookingManagement.ts",
+    "line": 192,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Không thể tải danh sách lọc.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useAdminBookingManagement.ts",
+    "line": 213,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Không thể tải thống kê đặt phòng.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useAdminDashboard.ts",
+    "line": 60,
+    "content": "catch (error) {\r\n      console.error('Failed to fetch admin stats:', error);\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useCancellationPolicy.ts",
+    "line": 41,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Không thể tải chính sách hủy phòng.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useCancellationPolicy.ts",
+    "line": 76,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Đã xảy ra lỗi. Vui lòng thử lại.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useDepositPolicy.ts",
+    "line": 38,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Không thể tải chính sách đặt cọc.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useDepositPolicy.ts",
+    "line": 78,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Có lỗi xảy ra.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useHotelBookingManagement.ts",
+    "line": 84,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Lỗi khi tải danh sách đơn đặt phòng'));\r\n      setBookings([]);\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useHotelBookingManagement.ts",
+    "line": 129,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Thao tác thất bại.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useHotelBookingManagement.ts",
+    "line": 153,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Thao tác thất bại.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useHotelBookingManagement.ts",
+    "line": 164,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Lỗi khi kiểm tra phòng trống.'));\r\n      return null;\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useHotelBookingManagement.ts",
+    "line": 177,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Gia hạn thất bại.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useHotelCatalog.ts",
+    "line": 139,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Đăng ký thất bại'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useHotelCatalog.ts",
+    "line": 150,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Không thể gửi đơn đăng ký'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useHotelCatalog.ts",
+    "line": 191,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Cập nhật thất bại'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useHotelCatalog.ts",
+    "line": 75,
+    "content": "catch ((err) => toast.error(extractErrorMessage(err, 'Lỗi khi tải chi tiết khách sạn')))\r"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useHotelInfo.ts",
+    "line": 93,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Upload ảnh thất bại.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useHotelInfo.ts",
+    "line": 113,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Xóa ảnh thất bại.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useManagerDashboard.ts",
+    "line": 64,
+    "content": "catch (error) {\r\n      console.error('Failed to fetch manager data:', error);\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\usePartnerDashboard.ts",
+    "line": 53,
+    "content": "catch (error) {\r\n      console.error('Failed to fetch partner stats:', error);\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useRoomTypeManagement.ts",
+    "line": 146,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Thao tác thất bại.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useStaffAssignment.ts",
+    "line": 65,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Không thể tải dữ liệu nhân sự.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useStaffAssignment.ts",
+    "line": 112,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Phân công thất bại'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useStaffAssignment.ts",
+    "line": 132,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Hủy phân công thất bại'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useStaffManagement.ts",
+    "line": 55,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Lỗi khi lấy danh sách nhân viên'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useStaffManagement.ts",
+    "line": 140,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Thêm thất bại'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useStaffManagement.ts",
+    "line": 208,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Cập nhật thất bại'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\hooks\\useStaffManagement.ts",
+    "line": 228,
+    "content": "catch (err: unknown) {\r\n      toast.error(extractErrorMessage(err, 'Không thể thay đổi trạng thái.'));\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\pages\\admin\\AdminHotelManagement.tsx",
+    "line": 53,
+    "content": "catch (() => toast.error('Lỗi khi tải chi tiết khách sạn'))\r"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\pages\\customer\\BookingConfirmationPage.tsx",
+    "line": 54,
+    "content": "catch (err) {\r\n      console.error(err);\r\n      setError('Không thể tải thông tin đơn hàng');\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\pages\\customer\\CustomerProfile.tsx",
+    "line": 38,
+    "content": "catch (err) {\r\n      toast.error('Không thể tải thông tin hồ sơ.');\r\n    }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\pages\\manager\\HotelBookingManagement.tsx",
+    "line": 451,
+    "content": "catch (e) {\r\n    console.error(\"Date parsing error\", e);\r\n  }"
+  },
+  {
+    "file": "e:\\Nam4\\LVTN_source\\frontend\\HotelBookingAppUI\\src\\pages\\profile\\Profile.tsx",
+    "line": 49,
+    "content": "catch (err: any) {\r\n      toast.error('Không thể tải thông tin hồ sơ.');\r\n    }"
+  }
+]

@@ -11,17 +11,6 @@ export interface RegisterUserRequest {
   confirmPassword: string;
 }
 
-export interface RegisterBusinessRequest {
-  businessName: string;
-  taxCode: string;
-  businessAddress: string;
-  representativeName: string;
-  position: string;
-  representativePhone: string;
-  representativeEmail: string;
-  password: string;
-  confirmPassword: string;
-}
 
 export interface AuthResponse {
   userId: string;

@@ -12,10 +12,8 @@ const Login: React.FC = () => {
     isSubmitting,
     loginData,
     regUserData,
-    regBizData,
     handleLoginSubmit,
-    handleRegisterUserSubmit,
-    handleRegisterBizSubmit
+    handleRegisterUserSubmit
   } = useLogin();
 
   return (
@@ -38,7 +36,7 @@ const Login: React.FC = () => {
               </svg>
               Về trang chủ
             </Link>
-            <h1 className="text-3xl font-bold tracking-tight">HotelBooking</h1>
+            <h1 className="text-3xl font-bold tracking-tight">BookNow</h1>
             <p className="text-white/80 mt-2">Nơi nghỉ chân hoàn hảo cho chuyến hành trình dài của bạn</p>
           </div>
 
@@ -46,28 +44,21 @@ const Login: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveTab(0)}
-              className={`pb-3 w-1/3 text-center font-medium transition-colors ${activeTab === 0 ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
+              className={`pb-3 w-1/2 text-center font-medium transition-colors ${activeTab === 0 ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
             >
               Đăng nhập
             </button>
             <button
               type="button"
               onClick={() => setActiveTab(1)}
-              className={`pb-3 w-1/3 text-center font-medium transition-colors ${activeTab === 1 ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
+              className={`pb-3 w-1/2 text-center font-medium transition-colors ${activeTab === 1 ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
             >
               Đăng ký người dùng
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab(2)}
-              className={`pb-3 w-1/3 text-center font-medium transition-colors ${activeTab === 2 ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
-            >
-              Đăng ký doanh nghiệp
             </button>
 
             {/* Thanh gạch chân trượt */}
             <div
-              className="absolute bottom-0 h-0.5 bg-white transition-all duration-300 ease-in-out w-1/3"
+              className="absolute bottom-0 h-0.5 bg-white transition-all duration-300 ease-in-out w-1/2"
               style={{ transform: `translateX(${activeTab * 100}%)` }}
             ></div>
           </div>
@@ -83,12 +74,12 @@ const Login: React.FC = () => {
         {/* Khung chứa các Form với hiệu ứng trượt */}
         <div className="overflow-hidden relative w-full h-[550px] sm:h-[450px]">
           <div
-            className="flex transition-transform duration-500 ease-in-out w-[300%] h-full"
-            style={{ transform: `translateX(-${activeTab * (100 / 3)}%)` }}
+            className="flex transition-transform duration-500 ease-in-out w-[200%] h-full"
+            style={{ transform: `translateX(-${activeTab * 50}%)` }}
           >
 
             {/* --- PANEL 1: ĐĂNG NHẬP --- */}
-            <div className="w-1/3 p-6 h-full overflow-y-auto custom-scrollbar">
+            <div className="w-1/2 p-6 h-full overflow-y-auto custom-scrollbar">
               <form onSubmit={handleLoginSubmit} noValidate className="space-y-4 max-w-sm mx-auto mt-4">
                 <Input
                   label="Email"
@@ -116,11 +107,18 @@ const Login: React.FC = () => {
                 >
                   Đăng Nhập
                 </Button>
+
+                <div className="text-center mt-6">
+                  <p className="text-white/70 text-sm">Muốn hợp tác cùng chúng tôi?</p>
+                  <Link to="/register-partner" className="text-white font-medium hover:underline text-sm inline-block mt-1">
+                    Đăng ký trở thành đối tác →
+                  </Link>
+                </div>
               </form>
             </div>
 
-            {/* --- PANEL 2: ĐĂNG KÝ USER/ADMIN --- */}
-            <div className="w-1/3 p-6 h-full overflow-y-auto custom-scrollbar">
+            {/* --- PANEL 2: ĐĂNG KÝ USER --- */}
+            <div className="w-1/2 p-6 h-full overflow-y-auto custom-scrollbar">
               <form onSubmit={handleRegisterUserSubmit} noValidate className="space-y-4 max-w-sm mx-auto mt-4">
                 <Input
                   label="Email"
@@ -153,99 +151,6 @@ const Login: React.FC = () => {
                   className="w-full mt-8 !bg-white !text-slate-900 hover:!bg-slate-100"
                 >
                   Tạo Tài Khoản
-                </Button>
-              </form>
-            </div>
-
-            {/* --- PANEL 3: ĐĂNG KÝ DOANH NGHIỆP --- */}
-            <div className="w-1/3 p-6 h-full overflow-y-auto custom-scrollbar">
-              <form onSubmit={handleRegisterBizSubmit} noValidate className="space-y-5 mt-2">
-                <h3 className="font-semibold text-white/90 border-b border-white/20 pb-2">1. Thông tin pháp lý & Doanh nghiệp</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Tên doanh nghiệp"
-                    variant="glass"
-                    value={regBizData.bizName}
-                    onChange={(e) => regBizData.setBizName(e.target.value)}
-                    error={fieldErrors.bizName}
-                  />
-                  <Input
-                    label="Mã số thuế"
-                    variant="glass"
-                    value={regBizData.bizTaxCode}
-                    onChange={(e) => regBizData.setBizTaxCode(e.target.value)}
-                    error={fieldErrors.bizTaxCode}
-                  />
-                  <Input
-                    label="Địa chỉ đăng ký kinh doanh"
-                    variant="glass"
-                    className="sm:col-span-2"
-                    value={regBizData.bizAddress}
-                    onChange={(e) => regBizData.setBizAddress(e.target.value)}
-                    error={fieldErrors.bizAddress}
-                  />
-                </div>
-
-                <h3 className="font-semibold text-white/90 border-b border-white/20 pb-2 pt-2">2. Thông tin người đại diện</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Họ tên"
-                    variant="glass"
-                    value={regBizData.repName}
-                    onChange={(e) => regBizData.setRepName(e.target.value)}
-                    error={fieldErrors.repName}
-                  />
-                  <Input
-                    label="Chức vụ"
-                    variant="glass"
-                    value={regBizData.repPosition}
-                    onChange={(e) => regBizData.setRepPosition(e.target.value)}
-                    error={fieldErrors.repPosition}
-                  />
-                  <Input
-                    label="Số điện thoại"
-                    type="text"
-                    variant="glass"
-                    value={regBizData.repPhone}
-                    onChange={(e) => regBizData.setRepPhone(e.target.value)}
-                    error={fieldErrors.repPhone}
-                  />
-                  <Input
-                    label="Email làm việc"
-                    type="text"
-                    variant="glass"
-                    value={regBizData.repEmail}
-                    onChange={(e) => regBizData.setRepEmail(e.target.value)}
-                    error={fieldErrors.repEmail}
-                  />
-                </div>
-
-                <h3 className="font-semibold text-white/90 border-b border-white/20 pb-2 pt-2">3. Thiết lập mật khẩu</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Mật khẩu"
-                    type="password"
-                    variant="glass"
-                    value={regBizData.bizPassword}
-                    onChange={(e) => regBizData.setBizPassword(e.target.value)}
-                    error={fieldErrors.bizPassword}
-                  />
-                  <Input
-                    label="Xác nhận mật khẩu"
-                    type="password"
-                    variant="glass"
-                    value={regBizData.bizConfirm}
-                    onChange={(e) => regBizData.setBizConfirm(e.target.value)}
-                    error={fieldErrors.bizConfirm}
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  isLoading={isSubmitting}
-                  className="w-full mt-4 !bg-teal-500 hover:!bg-teal-600 !text-white"
-                >
-                  Gửi Yêu Cầu Hợp Tác
                 </Button>
               </form>
             </div>

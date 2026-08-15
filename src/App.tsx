@@ -27,6 +27,7 @@ import HotelSearchPage from './pages/public/HotelSearchPage';
 import HotelDetailPage from './pages/public/HotelDetailPage';
 import AboutPage from './pages/public/AboutPage';
 import ContactPage from './pages/public/ContactPage';
+import RegisterPartnerPage from './pages/public/RegisterPartnerPage';
 
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -85,6 +86,7 @@ const App: React.FC = () => {
           <Route path="/hotels/:id" element={<HotelDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/register-partner" element={<RegisterPartnerPage />} />
 
           <Route element={<ProtectedRoute allowedRoles={['customer']} />}>
             <Route path="/profile" element={<CustomerProfile />} />
