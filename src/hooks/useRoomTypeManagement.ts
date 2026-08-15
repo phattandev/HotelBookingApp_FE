@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../components/ConfirmModal';
+import { extractErrorMessage } from '../utils/formatters';
 
 export interface HotelImage { id: string; url: string; isPrimary: boolean; displayOrder: number; }
 export interface AmenityItem { id: string; name: string; categoryName: string; }
@@ -143,8 +144,7 @@ export const useRoomTypeManagement = () => {
         fetchData();
       }
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      toast.error(error.response?.data?.message || 'Thao tác thất bại.');
+      toast.error(extractErrorMessage(err, 'Thao tác thất bại.'));
     } finally {
       setSaving(false);
     }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { extractErrorMessage } from '../utils/formatters';
 
 export interface DepositPolicy {
   id: string;
@@ -34,8 +35,8 @@ export const useDepositPolicy = () => {
         setPercentage(data.depositPercentage);
         setIsActive(data.isActive);
       }
-    } catch {
-      toast.error('Không thể tải chính sách đặt cọc.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Không thể tải chính sách đặt cọc.'));
     } finally {
       setLoading(false);
     }
@@ -74,8 +75,8 @@ export const useDepositPolicy = () => {
       }
       setIsEditing(false);
       await fetchPolicy();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Có lỗi xảy ra.'));
     } finally {
       setSubmitting(false);
     }

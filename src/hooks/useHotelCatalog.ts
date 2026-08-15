@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { toSentenceCase, isValidTaxCode } from '../utils/formatters';
+import { toSentenceCase, isValidTaxCode, extractErrorMessage } from '../utils/formatters';
 
 export interface Hotel {
   id: string;
@@ -72,7 +72,7 @@ export const useHotelCatalog = () => {
       setLoadingDetail(true);
       api.get(`/hotels/my-hotels/${detailModalHotelId}`)
         .then(res => setHotelDetail(res.data.data))
-        .catch(() => toast.error('Lỗi khi tải chi tiết khách sạn'))
+        .catch((err) => toast.error(extractErrorMessage(err, 'Lỗi khi tải chi tiết khách sạn')))
         .finally(() => setLoadingDetail(false));
     } else {
       setHotelDetail(null);
@@ -136,8 +136,8 @@ export const useHotelCatalog = () => {
       setIsRegisterModalOpen(false);
       setName(''); setAddressLine(''); setProvinceId(''); setWardId(''); setTaxCode('');
       fetchMyHotels();
-    } catch (err: any) {
-      toast.error(err.response?.data?.Message || 'Đăng ký thất bại');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Đăng ký thất bại'));
     }
   };
 
@@ -147,8 +147,8 @@ export const useHotelCatalog = () => {
       await api.post(`/hotels/${hotelId}/submit`);
       toast.success('Đã gửi đơn đăng ký khách sạn! Vui lòng chờ Admin phê duyệt.');
       fetchMyHotels();
-    } catch (err: any) {
-      toast.error(err.response?.data?.Message || 'Không thể gửi đơn đăng ký');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Không thể gửi đơn đăng ký'));
     } finally {
       setSubmittingId(null);
     }
@@ -188,8 +188,8 @@ export const useHotelCatalog = () => {
       if (detailModalHotelId === editingHotelId) {
           api.get(`/hotels/my-hotels/${detailModalHotelId}`).then(res => setHotelDetail(res.data.data));
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.Message || 'Cập nhật thất bại');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Cập nhật thất bại'));
     }
   };
 

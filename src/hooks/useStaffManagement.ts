@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../components/ConfirmModal';
-import { toSentenceCase, isValidPhone, isValidName } from '../utils/formatters';
+import { toSentenceCase, isValidPhone, isValidName, extractErrorMessage } from '../utils/formatters';
 
 export interface Employee {
   id: string;
@@ -52,8 +52,8 @@ export const useStaffManagement = () => {
     try {
       const res = await api.get('/businessstaff');
       setEmployees(res.data.data || []);
-    } catch {
-      toast.error('Lỗi khi lấy danh sách nhân viên');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Lỗi khi lấy danh sách nhân viên'));
     } finally {
       setLoading(false);
     }
@@ -137,12 +137,8 @@ export const useStaffManagement = () => {
       setIsModalOpen(false);
       fetchEmployees();
       setEmail(''); setFullName(''); setPhone(''); setPassword('');
-    } catch (err: any) {
-      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
-        toast.error(err.response.data.errors.join('\n'));
-      } else {
-        toast.error(err.response?.data?.message || 'Thêm thất bại');
-      }
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Thêm thất bại'));
     } finally {
       setSubmitting(false);
     }
@@ -209,12 +205,8 @@ export const useStaffManagement = () => {
       toast.success('Cập nhật thông tin nhân viên thành công!');
       closeEditModal();
       fetchEmployees();
-    } catch (err: any) {
-      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
-        toast.error(err.response.data.errors.join('\n'));
-      } else {
-        toast.error(err.response?.data?.message || 'Cập nhật thất bại');
-      }
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Cập nhật thất bại'));
     } finally {
       setEditSubmitting(false);
     }
@@ -233,8 +225,8 @@ export const useStaffManagement = () => {
       await api.patch(`/businessstaff/${employeeId}/toggle-status`);
       toast.success('Đã cập nhật trạng thái!');
       fetchEmployees();
-    } catch {
-      toast.error('Không thể thay đổi trạng thái.');
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, 'Không thể thay đổi trạng thái.'));
     }
   };
 
