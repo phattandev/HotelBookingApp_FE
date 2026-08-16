@@ -9,11 +9,6 @@ const Footer: React.FC = () => {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-                </svg>
-              </div>
               <span className="text-white font-bold text-base">BookNow</span>
             </div>
             <p className="text-sm leading-relaxed">
@@ -35,14 +30,10 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="text-white font-semibold text-sm mb-3">Đối tác</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/login" className="hover:text-white transition">Đăng ký khách sạn</Link></li>
+              <li><Link to="/register-partner" className="hover:text-white transition">Đăng ký khách sạn</Link></li>
               <li><Link to="/login" className="hover:text-white transition">Đăng nhập doanh nghiệp</Link></li>
             </ul>
           </div>
-        </div>
-
-        <div className="border-t border-slate-800 mt-10 pt-6 text-center text-xs text-slate-500">
-          © {new Date().getFullYear()} BookNow Marketplace. Bảo lưu mọi quyền.
         </div>
       </div>
     </footer>
