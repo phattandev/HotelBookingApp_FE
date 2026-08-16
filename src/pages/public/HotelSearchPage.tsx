@@ -19,6 +19,7 @@ interface HotelCard {
   starRating: number | null;
   primaryImageUrl: string | null;
   minPrice: number | null;
+  description?: string;
   roomTypes?: { name: string; basePrice: number }[];
   amenities?: { name: string }[];
 }
@@ -46,8 +47,8 @@ const CheckboxList = ({
   return (
     <div className="space-y-3">
       <Input
-        type="text" 
-        placeholder={searchPlaceholder} 
+        type="text"
+        placeholder={searchPlaceholder}
         value={query}
         onChange={e => setQuery(e.target.value)}
       />
@@ -305,17 +306,17 @@ const HotelSearchPage: React.FC = () => {
                 className="w-full bg-transparent border-none text-slate-900 font-medium px-4 py-3 focus:outline-none placeholder:text-slate-400 placeholder:font-normal"
               />
             </div>
-            
+
             {/* Nhận phòng */}
             <div className="w-full lg:w-[180px] bg-white rounded flex flex-col justify-center relative px-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase px-2 pt-1">Nhận phòng</label>
-              <DatePicker 
+              <DatePicker
                 value={parseDateString(localCheckIn)}
                 minDate={new Date()}
                 onChange={(date: Date | null) => {
-                   const str = formatDateString(date);
-                   setLocalCheckIn(str);
-                   if (localCheckOut && str && localCheckOut <= str) setLocalCheckOut('');
+                  const str = formatDateString(date);
+                  setLocalCheckIn(str);
+                  if (localCheckOut && str && localCheckOut <= str) setLocalCheckOut('');
                 }}
                 placeholderText="Chọn ngày"
                 className="w-full border-none bg-transparent p-0 text-slate-900 font-medium focus:ring-0 shadow-none px-2 pb-1 placeholder:font-normal placeholder:text-slate-400"
@@ -325,7 +326,7 @@ const HotelSearchPage: React.FC = () => {
             {/* Trả phòng */}
             <div className="w-full lg:w-[180px] bg-white rounded flex flex-col justify-center relative px-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase px-2 pt-1">Trả phòng</label>
-              <DatePicker 
+              <DatePicker
                 value={parseDateString(localCheckOut)}
                 minDate={localCheckIn ? addDays(parseDateString(localCheckIn)!, 1) : new Date()}
                 onChange={(date: Date | null) => setLocalCheckOut(formatDateString(date))}
@@ -336,16 +337,16 @@ const HotelSearchPage: React.FC = () => {
 
             {/* Số người / Phòng */}
             <div className="w-full lg:w-[240px] bg-white rounded flex items-center relative">
-              <OccupancyDropdown 
-                value={localOccupancy} 
+              <OccupancyDropdown
+                value={localOccupancy}
                 onChange={setLocalOccupancy}
                 className="w-full"
               />
             </div>
 
             {/* Button tìm kiếm */}
-            <div className="flex items-stretch shrink-0">
-              <Button onClick={handleSearch} className="w-full lg:w-auto px-8 font-bold text-lg h-full bg-indigo-700 hover:bg-indigo-800 rounded">
+            <div className="flex items-stretch shrink-0 w-full lg:w-auto">
+              <Button onClick={handleSearch} className="w-full lg:w-auto px-8 font-bold text-lg h-full py-3.5 lg:py-0 bg-indigo-700 hover:bg-indigo-800 rounded">
                 Tìm kiếm
               </Button>
             </div>
@@ -355,13 +356,16 @@ const HotelSearchPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-6 items-start">
         {/* Nút hiện filter trên mobile */}
-        <div className="lg:hidden w-full flex justify-end mb-2">
-          <Button 
+        <div className="lg:hidden w-full mb-4">
+          <Button
             variant="secondary"
             onClick={() => setIsMobileFilterOpen(true)}
-            className="flex items-center gap-2"
+            className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-slate-300 shadow-sm text-slate-700 font-bold text-base hover:bg-slate-50 transition"
           >
-            Bộ lọc
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            Bộ lọc nâng cao
           </Button>
         </div>
 
@@ -450,7 +454,7 @@ const HotelSearchPage: React.FC = () => {
             )}
 
           </div>
-          
+
           {/* Nút áp dụng luôn hiển thị ở dưới cùng */}
           <div className="p-4 border-t border-slate-100 bg-white">
             <Button onClick={handleApplyFilter} className="w-full">
@@ -467,75 +471,75 @@ const HotelSearchPage: React.FC = () => {
                 <h3 className="font-bold text-slate-800 text-lg">Bộ lọc</h3>
                 <button onClick={() => setIsMobileFilterOpen(false)} className="text-gray-500 text-2xl leading-none">&times;</button>
               </div>
-              
+
               <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
-              {/* Lọc giá */}
-              <div>
-                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Khoảng giá / đêm</h4>
-                <div className="space-y-2">
-                  <Input
-                    label="Từ (VNĐ)"
-                    type="text"
-                    inputMode="numeric"
-                    value={localMinPrice}
-                    onChange={e => setLocalMinPrice(e.target.value.replace(/[^0-9]/g, ''))}
-                    placeholder="0"
-                  />
-                  <Input
-                    label="Đến (VNĐ)"
-                    type="text"
-                    inputMode="numeric"
-                    value={localMaxPrice}
-                    onChange={e => setLocalMaxPrice(e.target.value.replace(/[^0-9]/g, ''))}
-                    placeholder="10,000,000"
-                  />
+                {/* Lọc giá */}
+                <div>
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Khoảng giá / đêm</h4>
+                  <div className="space-y-2">
+                    <Input
+                      label="Từ (VNĐ)"
+                      type="text"
+                      inputMode="numeric"
+                      value={localMinPrice}
+                      onChange={e => setLocalMinPrice(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="0"
+                    />
+                    <Input
+                      label="Đến (VNĐ)"
+                      type="text"
+                      inputMode="numeric"
+                      value={localMaxPrice}
+                      onChange={e => setLocalMaxPrice(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="10,000,000"
+                    />
+                  </div>
                 </div>
+
+                {/* Lọc loại phòng */}
+                {roomTypeNames.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Loại phòng</h4>
+                    <CheckboxList
+                      items={roomTypeNames.map(n => ({ id: n, label: n }))}
+                      selected={selectedRoomTypeNames}
+                      onToggle={toggleRoomTypeName}
+                      emptyText="Không có loại phòng"
+                      searchPlaceholder="Tìm loại phòng..."
+                    />
+                  </div>
+                )}
+
+                {/* Tiện nghi khách sạn */}
+                {hotelAmenities.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Tiện nghi khách sạn</h4>
+                    <CheckboxList
+                      items={hotelAmenities.map(a => ({ id: a.id, label: a.name }))}
+                      selected={selectedHotelAmenities}
+                      onToggle={toggleHotelAmenity}
+                      emptyText="Không có tiện nghi"
+                      searchPlaceholder="Tìm tiện nghi..."
+                    />
+                  </div>
+                )}
+
+                {/* Tiện nghi phòng */}
+                {roomAmenities.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Tiện nghi phòng</h4>
+                    <CheckboxList
+                      items={roomAmenities.map(a => ({ id: a.id, label: a.name }))}
+                      selected={selectedRoomAmenities}
+                      onToggle={toggleRoomAmenity}
+                      emptyText="Không có tiện nghi"
+                      searchPlaceholder="Tìm tiện nghi..."
+                    />
+                  </div>
+                )}
+
               </div>
 
-              {/* Lọc loại phòng */}
-              {roomTypeNames.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Loại phòng</h4>
-                  <CheckboxList
-                    items={roomTypeNames.map(n => ({ id: n, label: n }))}
-                    selected={selectedRoomTypeNames}
-                    onToggle={toggleRoomTypeName}
-                    emptyText="Không có loại phòng"
-                    searchPlaceholder="Tìm loại phòng..."
-                  />
-                </div>
-              )}
-
-              {/* Tiện nghi khách sạn */}
-              {hotelAmenities.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Tiện nghi khách sạn</h4>
-                  <CheckboxList
-                    items={hotelAmenities.map(a => ({ id: a.id, label: a.name }))}
-                    selected={selectedHotelAmenities}
-                    onToggle={toggleHotelAmenity}
-                    emptyText="Không có tiện nghi"
-                    searchPlaceholder="Tìm tiện nghi..."
-                  />
-                </div>
-              )}
-
-              {/* Tiện nghi phòng */}
-              {roomAmenities.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Tiện nghi phòng</h4>
-                  <CheckboxList
-                    items={roomAmenities.map(a => ({ id: a.id, label: a.name }))}
-                    selected={selectedRoomAmenities}
-                    onToggle={toggleRoomAmenity}
-                    emptyText="Không có tiện nghi"
-                    searchPlaceholder="Tìm tiện nghi..."
-                  />
-                </div>
-              )}
-
-              </div>
-              
               <div className="p-4 border-t border-slate-100 bg-white shrink-0">
                 <button
                   onClick={() => { handleApplyFilter(); setIsMobileFilterOpen(false); }}
@@ -618,26 +622,41 @@ const HotelSearchPage: React.FC = () => {
                       <span className="line-clamp-2">{hotel.addressLine}, {hotel.wardName}, {hotel.provinceName}</span>
                     </p>
 
+                    {/* Mô tả khách sạn */}
+                    {hotel.description && (
+                      <p className="text-sm text-slate-600 mb-4 line-clamp-2 leading-relaxed">
+                        {hotel.description}
+                      </p>
+                    )}
+
                     {/* Tiện nghi nổi bật */}
                     {hotel.amenities && hotel.amenities.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-3">
+                      <div className="flex flex-wrap gap-2 mb-4">
                         {hotel.amenities.map((amenity, idx) => (
-                          <span key={idx} className="text-xs border border-slate-200 text-slate-600 px-2 py-1 rounded">
+                          <span key={idx} className="text-xs border border-slate-200 text-slate-600 px-2 py-1 rounded-md bg-slate-50">
                             {amenity.name}
                           </span>
                         ))}
                       </div>
                     )}
-                    
+
                     {/* Các loại phòng */}
                     {hotel.roomTypes && hotel.roomTypes.length > 0 && (
-                      <div className="space-y-1 mb-2">
-                        {hotel.roomTypes.map((rt, idx) => (
-                          <div key={idx} className="text-xs text-slate-600 flex items-start gap-1.5">
-                            <FaCheck className="text-green-500 mt-0.5 shrink-0" />
-                            <span className="font-medium text-slate-700">{rt.name}</span>
+                      <div className="space-y-2 mb-2 border-t border-slate-100 pt-4">
+                        <p className="text-xs font-semibold text-slate-800 uppercase tracking-wide">Tùy chọn phòng</p>
+                        {hotel.roomTypes.slice(0, 2).map((rt, idx) => (
+                          <div key={idx} className="text-sm text-slate-600 flex items-start gap-2">
+                            <div>
+                              <span className="font-semibold text-slate-700">{rt.name}</span>
+                              <p className="text-xs text-slate-500 mt-0.5">Giá từ {rt.basePrice.toLocaleString('vi-VN')}₫</p>
+                            </div>
                           </div>
                         ))}
+                        {hotel.roomTypes.length > 2 && (
+                          <p className="text-xs text-indigo-600 font-medium pl-6 pt-1">
+                            + Xem thêm {hotel.roomTypes.length - 2} loại phòng khác...
+                          </p>
+                        )}
                       </div>
                     )}
 

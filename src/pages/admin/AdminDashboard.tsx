@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAdminDashboard, type HotelRevenueSummary } from '../../hooks/useAdminDashboard';
 import {
   LineChart,
@@ -105,18 +106,18 @@ const AdminDashboard: React.FC = () => {
           <h3 className="font-bold text-amber-800 mb-3">Cần xử lý</h3>
           <div className="space-y-2">
             {stats.pendingBusinesses > 0 && (
-              <a href="/admin/businesses" className="flex items-center gap-3 text-sm text-amber-700 hover:text-amber-900 group">
+              <Link to="/admin/accounts" className="flex items-center gap-3 text-sm text-amber-700 hover:text-amber-900 group">
                 <span className="font-bold bg-amber-600 text-white px-2.5 py-0.5 rounded-full text-xs">{stats.pendingBusinesses}</span>
                 Hồ sơ doanh nghiệp đang chờ phê duyệt
                 <span className="text-amber-500 group-hover:translate-x-1 transition-transform">→</span>
-              </a>
+              </Link>
             )}
             {stats.pendingHotels > 0 && (
-              <a href="/admin/approvals" className="flex items-center gap-3 text-sm text-amber-700 hover:text-amber-900 group">
+              <Link to="/admin/hotels" className="flex items-center gap-3 text-sm text-amber-700 hover:text-amber-900 group">
                 <span className="font-bold bg-amber-600 text-white px-2.5 py-0.5 rounded-full text-xs">{stats.pendingHotels}</span>
                 Khách sạn đang chờ phê duyệt
                 <span className="text-amber-500 group-hover:translate-x-1 transition-transform">→</span>
-              </a>
+              </Link>
             )}
           </div>
         </div>

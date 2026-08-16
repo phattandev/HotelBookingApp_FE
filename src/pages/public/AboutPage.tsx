@@ -1,27 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const TEAM = [
-  {
-    name: 'Nguyễn Văn An',
-    role: 'Founder & CEO',
-    avatar: 'https://ui-avatars.com/api/?name=Nguyen+Van+An&background=6366f1&color=fff&size=128',
-    desc: 'Với hơn 10 năm kinh nghiệm trong ngành du lịch và công nghệ, An đã xây dựng BookNow từ tầm nhìn đơn giản: đặt phòng khách sạn phải dễ như nhắn tin.',
-  },
-  {
-    name: 'Trần Thị Minh',
-    role: 'CTO',
-    avatar: 'https://ui-avatars.com/api/?name=Tran+Thi+Minh&background=8b5cf6&color=fff&size=128',
-    desc: 'Kỹ sư phần mềm với bề dày tại các công ty công nghệ hàng đầu. Minh chịu trách nhiệm xây dựng nền tảng kỹ thuật vững chắc và bảo mật của BookNow.',
-  },
-  {
-    name: 'Lê Hoàng Nam',
-    role: 'Head of Operations',
-    avatar: 'https://ui-avatars.com/api/?name=Le+Hoang+Nam&background=0ea5e9&color=fff&size=128',
-    desc: 'Chuyên gia vận hành với kinh nghiệm quản lý đối tác khách sạn trên khắp Việt Nam, đảm bảo chất lượng dịch vụ đến từng chi tiết nhỏ.',
-  },
-];
-
 const STATS = [
   { value: '500+', label: 'Khách sạn đối tác' },
   { value: '50,000+', label: 'Khách hàng hài lòng' },
@@ -173,29 +152,6 @@ const AboutPage: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Team */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-14">
-          <span className="text-indigo-600 text-sm font-semibold uppercase tracking-wider">Đội ngũ</span>
-          <h2 className="text-3xl font-bold text-slate-900 mt-3">Những người đứng sau BookNow</h2>
-          <p className="text-slate-500 mt-3 max-w-xl mx-auto">Một đội ngũ nhỏ, đam mê lớn — cùng nhau tạo ra sản phẩm mà triệu du khách Việt tin dùng.</p>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {TEAM.map((member) => (
-            <div key={member.name} className="text-center bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200">
-              <img
-                src={member.avatar}
-                alt={member.name}
-                className="w-20 h-20 rounded-full mx-auto mb-4 ring-4 ring-indigo-50"
-              />
-              <h3 className="font-bold text-slate-900 text-lg">{member.name}</h3>
-              <p className="text-indigo-600 text-sm font-medium mb-3">{member.role}</p>
-              <p className="text-slate-500 text-sm leading-relaxed">{member.desc}</p>
-            </div>
-          ))}
         </div>
       </section>
 

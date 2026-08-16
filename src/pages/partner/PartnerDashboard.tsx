@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { usePartnerDashboard } from '../../hooks/usePartnerDashboard';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Table } from '../../components/ui/Table';
@@ -85,11 +86,11 @@ const PartnerDashboard: React.FC = () => {
                 className="text-sm border-none focus:ring-0 text-slate-700 bg-transparent"
               />
             </div>
-            <a href="/partner/hotels">
+            <Link to="/partner/hotels">
               <Button variant="primary">
                 + Khách sạn mới
               </Button>
-            </a>
+            </Link>
           </div>
         }
       />

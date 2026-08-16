@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useManagerDashboard } from '../../hooks/useManagerDashboard';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Badge } from '../../components/ui/Badge';
@@ -117,9 +118,9 @@ const ManagerDashboard: React.FC = () => {
             <h3 className="font-bold text-amber-800">Có {stats.pendingBookings} đơn đặt phòng đang chờ bạn xác nhận</h3>
             <p className="text-amber-700 text-sm mt-1">Hãy kiểm tra và xác nhận sớm để không làm lỡ chuyến đi của khách hàng.</p>
           </div>
-          <a href="/manager/bookings" className="px-4 py-2 bg-amber-600 text-white text-sm font-bold rounded-xl hover:bg-amber-700 transition">
+          <Link to="/manager/bookings" className="px-4 py-2 bg-amber-600 text-white text-sm font-bold rounded-xl hover:bg-amber-700 transition">
             Xem ngay
-          </a>
+          </Link>
         </div>
       )}
 
