@@ -344,8 +344,8 @@ const HotelSearchPage: React.FC = () => {
             </div>
 
             {/* Button tìm kiếm */}
-            <div className="flex items-stretch shrink-0">
-              <Button onClick={handleSearch} className="w-full lg:w-auto px-8 font-bold text-lg h-full bg-indigo-700 hover:bg-indigo-800 rounded">
+            <div className="flex items-stretch shrink-0 w-full lg:w-auto">
+              <Button onClick={handleSearch} className="w-full lg:w-auto px-8 font-bold text-lg h-full py-3.5 lg:py-0 bg-indigo-700 hover:bg-indigo-800 rounded">
                 Tìm kiếm
               </Button>
             </div>
@@ -355,13 +355,16 @@ const HotelSearchPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-6 items-start">
         {/* Nút hiện filter trên mobile */}
-        <div className="lg:hidden w-full flex justify-end mb-2">
+        <div className="lg:hidden w-full mb-4">
           <Button 
             variant="secondary"
             onClick={() => setIsMobileFilterOpen(true)}
-            className="flex items-center gap-2"
+            className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-slate-300 shadow-sm text-slate-700 font-bold text-base hover:bg-slate-50 transition"
           >
-            Bộ lọc
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            Bộ lọc nâng cao
           </Button>
         </div>
 

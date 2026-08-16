@@ -7,6 +7,7 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const navLinks = [
     { to: '/', label: 'Trang chủ' },
@@ -109,8 +110,49 @@ const Header: React.FC = () => {
               Đăng nhập
             </button>
           )}
+
+          {/* Hamburger button for mobile */}
+          <button 
+            className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg ml-1"
+            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {mobileNavOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
         </div>
       </div>
+
+      {/* Mobile Nav */}
+      {mobileNavOpen && (
+        <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-slate-200 shadow-xl py-4 px-4 flex flex-col gap-2 z-40">
+          {navLinks.map(link => (
+            <Link
+              key={link.to}
+              to={link.to}
+              onClick={() => setMobileNavOpen(false)}
+              className={`px-4 py-3 rounded-xl text-base font-medium transition-colors ${location.pathname === link.to
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-slate-700 hover:bg-slate-50'
+                }`}
+            >
+              {link.label}
+            </Link>
+          ))}
+          {!isAuthenticated && (
+            <button
+              onClick={() => { setMobileNavOpen(false); navigate('/login'); }}
+              className="mt-2 w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl hover:bg-indigo-700 transition"
+            >
+              Đăng nhập
+            </button>
+          )}
+        </div>
+      )}
     </header>
   );
 };

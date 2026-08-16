@@ -10,17 +10,17 @@ import { format } from 'date-fns';
 // ─── Slide data ────────────────────────────────────────────────────────────────
 const SLIDES = [
   {
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1600&q=80',
+    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1600&h=900&fit=crop&q=80',
     title: 'Nghỉ dưỡng đẳng cấp tại Việt Nam',
     subtitle: 'Hàng nghìn khách sạn từ Bắc đến Nam — đặt phòng dễ dàng trong vài giây.',
   },
   {
-    image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1600&q=80',
+    image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1600&h=900&fit=crop&q=80',
     title: 'Tìm nơi lưu trú lý tưởng',
     subtitle: 'Từ resort biển đến boutique hotel phố cổ — tất cả trên một nền tảng.',
   },
   {
-    image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1600&q=80',
+    image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1600&h=900&fit=crop&q=80',
     title: 'Trải nghiệm không thể quên',
     subtitle: 'Đặt phòng an toàn, giá minh bạch, hỗ trợ 24/7.',
   },
@@ -113,22 +113,24 @@ const HomePage: React.FC = () => {
   return (
     <div className="bg-white">
       {/* ===== HERO / SLIDESHOW ===== */}
-      <section className="relative h-[580px] overflow-hidden">
+      <section className="relative h-[580px]">
         {/* Slides */}
-        {SLIDES.map((slide, i) => (
-          <div
-            key={i}
-            className="absolute inset-0 transition-opacity duration-1000"
-            style={{ opacity: currentSlide === i ? 1 : 0 }}
-          >
-            <img
-              src={slide.image}
-              alt={slide.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-black/60" />
-          </div>
-        ))}
+        <div className="absolute inset-0 overflow-hidden">
+          {SLIDES.map((slide, i) => (
+            <div
+              key={i}
+              className="absolute inset-0 transition-opacity duration-1000"
+              style={{ opacity: currentSlide === i ? 1 : 0 }}
+            >
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-black/60" />
+            </div>
+          ))}
+        </div>
 
         {/* Hero text */}
         <div className="relative z-10 h-full flex flex-col items-center justify-center text-center text-white px-4">
@@ -142,20 +144,20 @@ const HomePage: React.FC = () => {
           {/* Search form */}
           <form
             onSubmit={handleSearch}
-            className="mt-8 w-full max-w-[1000px] bg-white/20 backdrop-blur-md rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col sm:flex-row gap-2 border border-white/30"
+            className="mt-8 w-full max-w-[1000px] bg-white/20 backdrop-blur-md rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col lg:flex-row gap-2 border border-white/30"
           >
-            <div className="flex-1 bg-white rounded-lg p-2 flex flex-col relative">
-              <label className="text-[10px] font-bold text-slate-500 uppercase px-2">Điểm đến</label>
+            <div className="flex-1 w-full bg-white rounded-lg p-2 sm:p-3 flex flex-col relative">
+              <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase px-2">Điểm đến</label>
               <input
                 type="text"
                 value={destination}
                 onChange={e => setDestination(e.target.value)}
                 placeholder="Thành phố, tên khách sạn..."
-                className="w-full bg-transparent border-none text-slate-900 font-medium px-2 py-1 focus:outline-none placeholder:text-slate-400 placeholder:font-normal"
+                className="w-full bg-transparent border-none text-slate-900 font-medium px-2 py-2 sm:py-1 focus:outline-none placeholder:text-slate-400 placeholder:font-normal text-sm sm:text-base"
               />
             </div>
-            <div className="w-full sm:w-[180px] bg-white rounded-lg p-2 flex flex-col relative">
-              <label className="text-[10px] font-bold text-slate-500 uppercase px-2">Nhận phòng</label>
+            <div className="w-full lg:w-[180px] bg-white rounded-lg p-2 sm:p-3 flex flex-col relative">
+              <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase px-2">Nhận phòng</label>
               <DatePicker
                 value={parseDateString(checkIn)}
                 minDate={todayDate}
@@ -165,30 +167,30 @@ const HomePage: React.FC = () => {
                   if (checkOut && str && checkOut <= str) setCheckOut('');
                 }}
                 placeholderText="Chọn ngày"
-                className="w-full border-none bg-transparent p-0 text-slate-900 font-medium focus:ring-0 shadow-none px-2 py-1 placeholder:font-normal placeholder:text-slate-400"
+                className="w-full border-none bg-transparent p-0 text-slate-900 font-medium focus:ring-0 shadow-none px-2 py-2 sm:py-1 placeholder:font-normal placeholder:text-slate-400 text-sm sm:text-base"
               />
             </div>
-            <div className="w-full sm:w-[180px] bg-white rounded-lg p-2 flex flex-col relative">
-              <label className="text-[10px] font-bold text-slate-500 uppercase px-2">Trả phòng</label>
+            <div className="w-full lg:w-[180px] bg-white rounded-lg p-2 sm:p-3 flex flex-col relative">
+              <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase px-2">Trả phòng</label>
               <DatePicker
                 value={parseDateString(checkOut)}
                 minDate={minCheckOutDate}
                 onChange={(date: Date | null) => setCheckOut(formatDateString(date))}
                 placeholderText="Chọn ngày"
-                className="w-full border-none bg-transparent p-0 text-slate-900 font-medium focus:ring-0 shadow-none px-2 py-1 placeholder:font-normal placeholder:text-slate-400"
+                className="w-full border-none bg-transparent p-0 text-slate-900 font-medium focus:ring-0 shadow-none px-2 py-2 sm:py-1 placeholder:font-normal placeholder:text-slate-400 text-sm sm:text-base"
               />
             </div>
-            <div className="w-full sm:w-[240px] bg-white rounded-lg flex items-center relative p-1">
+            <div className="w-full lg:w-[260px] bg-white rounded-lg flex items-center relative p-1 sm:p-2">
               <OccupancyDropdown
                 value={occupancy}
                 onChange={setOccupancy}
                 className="w-full"
               />
             </div>
-            <div className="flex items-stretch shrink-0">
+            <div className="flex items-stretch shrink-0 mt-1 lg:mt-0 w-full lg:w-auto">
               <Button
                 type="submit"
-                className="w-full sm:w-auto px-8 font-bold text-base h-full bg-indigo-600 hover:bg-indigo-700"
+                className="w-full lg:w-auto px-8 py-3.5 lg:py-0 font-bold text-base h-full bg-indigo-600 hover:bg-indigo-700"
               >
                 Tìm kiếm
               </Button>

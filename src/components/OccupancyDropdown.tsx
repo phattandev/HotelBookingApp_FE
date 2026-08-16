@@ -55,7 +55,7 @@ const OccupancyDropdown: React.FC<OccupancyDropdownProps> = ({ value, onChange, 
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50 p-5">
+        <div className="absolute top-full left-0 mt-2 w-full min-w-[280px] sm:min-w-[320px] bg-white rounded-xl shadow-2xl border border-gray-100 z-50 p-5">
           <div className="space-y-5">
             {/* Rooms */}
             <div className="flex items-center justify-between">
@@ -67,15 +67,15 @@ const OccupancyDropdown: React.FC<OccupancyDropdownProps> = ({ value, onChange, 
                   type="button"
                   onClick={() => handleDecrement('rooms', 1)}
                   disabled={value.rooms <= 1}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-10 h-10 sm:w-8 sm:h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <FaMinus size={12} />
                 </button>
-                <span className="w-8 text-center font-medium text-slate-900">{value.rooms}</span>
+                <span className="w-8 text-center font-medium text-slate-900 text-lg sm:text-base">{value.rooms}</span>
                 <button
                   type="button"
                   onClick={() => handleIncrement('rooms')}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-colors"
+                  className="w-10 h-10 sm:w-8 sm:h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-colors"
                 >
                   <FaPlus size={12} />
                 </button>
@@ -93,15 +93,15 @@ const OccupancyDropdown: React.FC<OccupancyDropdownProps> = ({ value, onChange, 
                   type="button"
                   onClick={() => handleDecrement('adults', 1)}
                   disabled={value.adults <= 1}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-10 h-10 sm:w-8 sm:h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <FaMinus size={12} />
                 </button>
-                <span className="w-8 text-center font-medium text-slate-900">{value.adults}</span>
+                <span className="w-8 text-center font-medium text-slate-900 text-lg sm:text-base">{value.adults}</span>
                 <button
                   type="button"
                   onClick={() => handleIncrement('adults')}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-colors"
+                  className="w-10 h-10 sm:w-8 sm:h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-colors"
                 >
                   <FaPlus size={12} />
                 </button>
@@ -119,15 +119,15 @@ const OccupancyDropdown: React.FC<OccupancyDropdownProps> = ({ value, onChange, 
                   type="button"
                   onClick={() => handleDecrement('children', 0)}
                   disabled={value.children <= 0}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-10 h-10 sm:w-8 sm:h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <FaMinus size={12} />
                 </button>
-                <span className="w-8 text-center font-medium text-slate-900">{value.children}</span>
+                <span className="w-8 text-center font-medium text-slate-900 text-lg sm:text-base">{value.children}</span>
                 <button
                   type="button"
                   onClick={() => handleIncrement('children')}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-colors"
+                  className="w-10 h-10 sm:w-8 sm:h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-colors"
                 >
                   <FaPlus size={12} />
                 </button>
