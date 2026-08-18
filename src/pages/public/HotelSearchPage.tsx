@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { Checkbox } from '../../components/ui/Checkbox';
 import OccupancyDropdown from '../../components/OccupancyDropdown';
+import LocationSuggestionDropdown from '../../components/LocationSuggestionDropdown';
 import { FaStar, FaMapMarkerAlt, FaCheck } from 'react-icons/fa';
 
 interface HotelCard {
@@ -75,6 +76,9 @@ const HotelSearchPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const checkInRef = useRef<any>(null);
+  const checkOutRef = useRef<any>(null);
+  const occupancyRef = useRef<any>(null);
 
   // ---- Data for filters ----
   const [hotelAmenities, setHotelAmenities] = useState<AmenityItem[]>([]);
@@ -105,6 +109,7 @@ const HotelSearchPage: React.FC = () => {
   );
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [showSuggestion, setShowSuggestion] = useState(false);
 
   // ---- Committed values (từ URL params) ----
   const q = searchParams.get('q') || '';
@@ -295,28 +300,46 @@ const HotelSearchPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4">
           <div className="bg-indigo-400 p-1 rounded-lg flex flex-col lg:flex-row gap-1 shadow-lg max-w-[1000px] mx-auto">
             {/* Điểm đến */}
-            <div className="flex-1 bg-white rounded flex items-center relative overflow-hidden">
+            <div className="flex-1 bg-white rounded flex items-center relative overflow-visible">
               <input
                 ref={searchInputRef}
                 type="text"
                 value={localQ}
-                onChange={e => setLocalQ(e.target.value)}
-                placeholder="Tên khách sạn, thành phố..."
-                onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
+                onChange={e => { setLocalQ(e.target.value); setShowSuggestion(true); }}
+                onFocus={() => setShowSuggestion(true)}
+                onBlur={() => setTimeout(() => setShowSuggestion(false), 150)}
+                placeholder="Tìm theo địa điểm, tên khách sạn..."
+                onKeyDown={e => { if (e.key === 'Enter') { setShowSuggestion(false); handleSearch(); } if (e.key === 'Escape') setShowSuggestion(false); }}
                 className="w-full bg-transparent border-none text-slate-900 font-medium px-4 py-3 focus:outline-none placeholder:text-slate-400 placeholder:font-normal"
               />
+              {showSuggestion && (
+                <LocationSuggestionDropdown
+                  query={localQ}
+                  onSelect={(value) => {
+                    setLocalQ(value);
+                    setShowSuggestion(false);
+                    // Focus vào ô chọn ngày nhận phòng
+                    checkInRef.current?.setFocus();
+                  }}
+                  onClose={() => setShowSuggestion(false)}
+                />
+              )}
             </div>
 
             {/* Nhận phòng */}
             <div className="w-full lg:w-[180px] bg-white rounded flex flex-col justify-center relative px-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase px-2 pt-1">Nhận phòng</label>
               <DatePicker
+                ref={checkInRef}
                 value={parseDateString(localCheckIn)}
                 minDate={new Date()}
                 onChange={(date: Date | null) => {
                   const str = formatDateString(date);
                   setLocalCheckIn(str);
                   if (localCheckOut && str && localCheckOut <= str) setLocalCheckOut('');
+                  if (date) {
+                    setTimeout(() => checkOutRef.current?.setFocus(), 0);
+                  }
                 }}
                 placeholderText="Chọn ngày"
                 className="w-full border-none bg-transparent p-0 text-slate-900 font-medium focus:ring-0 shadow-none px-2 pb-1 placeholder:font-normal placeholder:text-slate-400"
@@ -327,9 +350,15 @@ const HotelSearchPage: React.FC = () => {
             <div className="w-full lg:w-[180px] bg-white rounded flex flex-col justify-center relative px-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase px-2 pt-1">Trả phòng</label>
               <DatePicker
+                ref={checkOutRef}
                 value={parseDateString(localCheckOut)}
                 minDate={localCheckIn ? addDays(parseDateString(localCheckIn)!, 1) : new Date()}
-                onChange={(date: Date | null) => setLocalCheckOut(formatDateString(date))}
+                onChange={(date: Date | null) => {
+                  setLocalCheckOut(formatDateString(date));
+                  if (date) {
+                    setTimeout(() => occupancyRef.current?.open(), 0);
+                  }
+                }}
                 placeholderText="Chọn ngày"
                 className="w-full border-none bg-transparent p-0 text-slate-900 font-medium focus:ring-0 shadow-none px-2 pb-1 placeholder:font-normal placeholder:text-slate-400"
               />
@@ -338,6 +367,7 @@ const HotelSearchPage: React.FC = () => {
             {/* Số người / Phòng */}
             <div className="w-full lg:w-[240px] bg-white rounded flex items-center relative">
               <OccupancyDropdown
+                ref={occupancyRef}
                 value={localOccupancy}
                 onChange={setLocalOccupancy}
                 className="w-full"
