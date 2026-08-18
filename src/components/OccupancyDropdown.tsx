@@ -1,21 +1,34 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { FaUserFriends, FaChevronDown, FaPlus, FaMinus } from 'react-icons/fa';
 
-interface Occupancy {
+export interface Occupancy {
   rooms: number;
   adults: number;
   children: number;
 }
 
-interface OccupancyDropdownProps {
+export interface OccupancyDropdownProps {
   value: Occupancy;
   onChange: (value: Occupancy) => void;
   className?: string;
 }
 
-const OccupancyDropdown: React.FC<OccupancyDropdownProps> = ({ value, onChange, className = '' }) => {
+export interface OccupancyDropdownRef {
+  open: () => void;
+  close: () => void;
+  focus: () => void;
+}
+
+const OccupancyDropdown = forwardRef<OccupancyDropdownRef, OccupancyDropdownProps>(({ value, onChange, className = '' }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    open: () => setIsOpen(true),
+    close: () => setIsOpen(false),
+    focus: () => buttonRef.current?.focus()
+  }));
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -41,13 +54,14 @@ const OccupancyDropdown: React.FC<OccupancyDropdownProps> = ({ value, onChange, 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full h-full flex items-center justify-between bg-transparent border-none text-slate-900 py-3 px-4 focus:outline-none transition-all"
       >
         <div className="flex items-center gap-2 overflow-hidden">
           <FaUserFriends className="text-gray-400 flex-shrink-0" />
-          <span className="truncate">
+          <span className="truncate text-sm sm:text-[13px]">
             {value.adults} người lớn · {value.children} trẻ em · {value.rooms} phòng
           </span>
         </div>
@@ -148,6 +162,8 @@ const OccupancyDropdown: React.FC<OccupancyDropdownProps> = ({ value, onChange, 
       )}
     </div>
   );
-};
+});
+
+OccupancyDropdown.displayName = 'OccupancyDropdown';
 
 export default OccupancyDropdown;

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { Button } from '../../components/ui/Button';
 import OccupancyDropdown from '../../components/OccupancyDropdown';
 import { DatePicker } from '../../components/ui/DatePicker';
+import LocationSuggestionDropdown from '../../components/LocationSuggestionDropdown';
 import { format } from 'date-fns';
 
 // ─── Slide data ────────────────────────────────────────────────────────────────
@@ -60,10 +61,14 @@ const FEATURES = [
 const HomePage: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [destination, setDestination] = useState('');
+  const [showSuggestion, setShowSuggestion] = useState(false);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [occupancy, setOccupancy] = useState({ rooms: 1, adults: 2, children: 0 });
   const slideInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const checkInRef = useRef<any>(null);
+  const checkOutRef = useRef<any>(null);
+  const occupancyRef = useRef<any>(null);
   const navigate = useNavigate();
 
   // Ngày hôm nay theo local time
@@ -148,23 +153,44 @@ const HomePage: React.FC = () => {
           >
             <div className="flex-1 w-full bg-white rounded-lg p-2 sm:p-3 flex flex-col relative">
               <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase px-2">Điểm đến</label>
-              <input
-                type="text"
-                value={destination}
-                onChange={e => setDestination(e.target.value)}
-                placeholder="Thành phố, tên khách sạn..."
-                className="w-full bg-transparent border-none text-slate-900 font-medium px-2 py-2 sm:py-1 focus:outline-none placeholder:text-slate-400 placeholder:font-normal text-sm sm:text-base"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={destination}
+                  onChange={e => { setDestination(e.target.value); setShowSuggestion(true); }}
+                  onFocus={() => setShowSuggestion(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestion(false), 150)}
+                  onKeyDown={e => { if (e.key === 'Escape') setShowSuggestion(false); }}
+                  placeholder="Thành phố, địa điểm..."
+                  className="w-full bg-transparent border-none text-slate-900 font-medium px-2 py-2 sm:py-1 focus:outline-none placeholder:text-slate-400 placeholder:font-normal text-sm sm:text-base"
+                />
+                {showSuggestion && (
+                  <LocationSuggestionDropdown
+                    query={destination}
+                    onSelect={(value) => {
+                      setDestination(value);
+                      setShowSuggestion(false);
+                      // Focus vào ô chọn ngày nhận phòng
+                      checkInRef.current?.setFocus();
+                    }}
+                    onClose={() => setShowSuggestion(false)}
+                  />
+                )}
+              </div>
             </div>
             <div className="w-full lg:w-[180px] bg-white rounded-lg p-2 sm:p-3 flex flex-col relative">
               <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase px-2">Nhận phòng</label>
               <DatePicker
+                ref={checkInRef}
                 value={parseDateString(checkIn)}
                 minDate={todayDate}
                 onChange={(date: Date | null) => {
                   const str = formatDateString(date);
                   setCheckIn(str);
                   if (checkOut && str && checkOut <= str) setCheckOut('');
+                  if (date) {
+                    setTimeout(() => checkOutRef.current?.setFocus(), 0);
+                  }
                 }}
                 placeholderText="Chọn ngày"
                 className="w-full border-none bg-transparent p-0 text-slate-900 font-medium focus:ring-0 shadow-none px-2 py-2 sm:py-1 placeholder:font-normal placeholder:text-slate-400 text-sm sm:text-base"
@@ -173,15 +199,22 @@ const HomePage: React.FC = () => {
             <div className="w-full lg:w-[180px] bg-white rounded-lg p-2 sm:p-3 flex flex-col relative">
               <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase px-2">Trả phòng</label>
               <DatePicker
+                ref={checkOutRef}
                 value={parseDateString(checkOut)}
                 minDate={minCheckOutDate}
-                onChange={(date: Date | null) => setCheckOut(formatDateString(date))}
+                onChange={(date: Date | null) => {
+                  setCheckOut(formatDateString(date));
+                  if (date) {
+                    setTimeout(() => occupancyRef.current?.open(), 0);
+                  }
+                }}
                 placeholderText="Chọn ngày"
                 className="w-full border-none bg-transparent p-0 text-slate-900 font-medium focus:ring-0 shadow-none px-2 py-2 sm:py-1 placeholder:font-normal placeholder:text-slate-400 text-sm sm:text-base"
               />
             </div>
             <div className="w-full lg:w-[260px] bg-white rounded-lg flex items-center relative p-1 sm:p-2">
               <OccupancyDropdown
+                ref={occupancyRef}
                 value={occupancy}
                 onChange={setOccupancy}
                 className="w-full"
