@@ -265,45 +265,7 @@ const BusinessApproval: React.FC = () => {
               </div>
             </div>
 
-            {/* Tài liệu pháp lý */}
-            <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Tài liệu pháp lý chứng minh</h3>
-              {(!selectedBusiness.documents || selectedBusiness.documents.length === 0) ? (
-                <div className="bg-amber-50 text-amber-800 p-4 rounded-xl text-sm border border-amber-200">
-                  ⚠️ Doanh nghiệp này chưa tải lên tài liệu pháp lý nào.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {selectedBusiness.documents.map(doc => (
-                    <div key={doc.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-                      <div className="flex items-center gap-3 overflow-hidden w-full sm:w-auto">
-                        <svg className="w-8 h-8 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                        </svg>
-                        <div className="truncate min-w-0">
-                          <p className="font-medium text-slate-900 text-sm truncate" title={doc.fileName}>{doc.fileName}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            {doc.fileSizeBytes ? (doc.fileSizeBytes / (1024 * 1024)).toFixed(2) : '0'} MB • Đăng lúc {new Date(doc.uploadedAt).toLocaleString('vi-VN')}
-                          </p>
-                        </div>
-                      </div>
-                      <a 
-                        href={doc.fileUrl} 
-                        target="_blank" 
-                        rel="noreferrer" 
-                        className="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2 rounded-lg whitespace-nowrap transition-colors shrink-0 flex items-center gap-2"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        Xem / Tải
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Tài liệu pháp lý đã được ẩn */}
           </div>
         )}
       </SidePanel>
