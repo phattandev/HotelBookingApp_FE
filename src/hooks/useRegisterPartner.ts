@@ -125,11 +125,6 @@ export const useRegisterPartner = () => {
       hasError = true;
     }
 
-    if (selectedFiles.length === 0) {
-      toast.error('Vui lòng upload ít nhất 1 tài liệu pháp lý (PDF).');
-      hasError = true;
-    }
-
     if (hasError) {
       setFieldErrors(errors);
       return;

@@ -116,7 +116,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
       const res = await api.post('/bookings', payload);
       toast.success(res.data.message || 'Đặt phòng thành công!');
-      navigate('/my-bookings');
+      navigate(`/booking/${res.data.data}`);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi đặt phòng.');
     } finally {
